@@ -3,97 +3,218 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>超ターゲットシューティング</title>
+  <title>CYBER TARGET BLITZ</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    * { box-sizing: border-box; user-select: none; }
-    body { margin: 0; background: #0a0a12; color: #fff; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
-    .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10,10,18,0.95); z-index: 10; }
+    * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
+    body { background: #05050a; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
+    
+    .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,5,10,0.95); z-index: 10; }
     .hidden { display: none !important; }
-    h1 { font-size: 2.2rem; color: #00f0ff; text-shadow: 0 0 15px #00f0ff; }
-    .btn { padding: 12px 30px; margin: 10px; font-size: 1.1rem; border: 2px solid #00f0ff; border-radius: 25px; background: rgba(0,240,255,0.1); color: #fff; cursor: pointer; }
-    #header-ui { position: absolute; top: 0; left: 0; width: 100%; height: 70px; background: rgba(15,15,30,0.85); border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5; }
-    .stat-val { font-size: 1.4rem; color: #00f0ff; }
-    #field { position: absolute; top:0; left:0; width:100vw; height:100vh; }
-    .target { position: absolute; width: 65px; height: 65px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .t-normal { background: #ff0055; border: 3px solid #fff; box-shadow: 0 0 15px #ff0055; }
-    .t-gold { background: #ffe600; border: 3px solid #fff; box-shadow: 0 0 20px #ffe600; }
-    .t-bomb { background: #330033; border: 3px dashed #ff0055; }
-    .t-ghost { background: rgba(255,255,255,0.3); border: 2px dashed #00f0ff; }
-    .t-barrel { background: #5c3a21; border: 4px solid #8d5b28; border-radius: 10px; }
-    .t-timestop { background: #00bcd4; border: 3px solid #fff; }
-    .t-mirror { background: #e91e63; border: 3px solid #fff; }
-    .overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 8; }
-    #freeze-overlay { background: rgba(0,240,255,0.3); border: 10px solid #00f0ff; }
-    #reverse-overlay { border: 10px solid #ff007f; }
+    
+    h1 { font-size: 2.8rem; color: #00f0ff; text-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff; letter-spacing: 3px; margin-bottom: 25px; text-align: center; }
+    h2 { font-size: 2.2rem; color: #ff0055; text-shadow: 0 0 15px #ff0055; margin-bottom: 15px; }
+
+    .input-box { padding: 14px 20px; margin-bottom: 20px; font-size: 1.2rem; border-radius: 30px; border: 2px solid #00f0ff; background: rgba(0,240,255,0.08); color: #fff; text-align: center; outline: none; box-shadow: 0 0 15px rgba(0,240,255,0.3); width: 280px; }
+    .input-box:focus { box-shadow: 0 0 25px #00f0ff; }
+
+    .btn-group { display: flex; flex-direction: column; gap: 14px; width: 280px; }
+    .btn { padding: 14px 20px; font-size: 1.1rem; font-weight: bold; border: 2px solid #00f0ff; border-radius: 30px; background: rgba(0,240,255,0.15); color: #fff; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.2); }
+    .btn:hover { background: #00f0ff; color: #000; box-shadow: 0 0 30px #00f0ff; transform: scale(1.03); }
+    .btn-secondary { border-color: #ff0055; background: rgba(255,0,85,0.15); box-shadow: 0 0 15px rgba(255,0,85,0.2); }
+    .btn-secondary:hover { background: #ff0055; color: #fff; box-shadow: 0 0 30px #ff0055; }
+
+    /* モーダル */
+    .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 20; }
+    .modal-content { background: #0d0d1a; border: 2px solid #00f0ff; border-radius: 20px; padding: 25px; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto; box-shadow: 0 0 35px rgba(0,240,255,0.4); text-align: center; }
+    .modal-content h3 { color: #00f0ff; margin-bottom: 15px; font-size: 1.6rem; }
+    .rank-list { text-align: left; margin: 15px 0; }
+    .rank-item { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1rem; }
+
+    /* ゲーム画面 UI */
+    #header-ui { position: absolute; top: 0; left: 0; width: 100%; height: 75px; background: rgba(10,10,20,0.9); border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5; font-weight: bold; }
+    .stat-box { text-align: center; }
+    .stat-label { font-size: 0.75rem; color: #888; }
+    .stat-val { font-size: 1.6rem; color: #00f0ff; text-shadow: 0 0 10px #00f0ff; }
+
+    #field-container { position: absolute; top:0; left:0; width:100vw; height:100vh; transition: transform 0.3s ease; }
+    #field-container.reversed { transform: scaleX(-1); }
+
+    /* サイバーターゲット描画 */
+    .target { position: absolute; width: 75px; height: 75px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; box-shadow: 0 0 20px currentColor; transition: transform 0.1s ease; animation: popIn 0.2s ease-out; }
+    .target:active { transform: translate(-50%, -50%) scale(0.85); }
+    @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+
+    .target::before { content: ''; position: absolute; width: 85%; height: 85%; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.8); animation: rotate 4s linear infinite; }
+    .target::after { content: '+'; position: absolute; font-size: 1.8rem; color: rgba(255,255,255,0.9); }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+
+    .t-normal { color: #ff0055; background: radial-gradient(circle, #ff0055 30%, #55001c 90%); border: 3px solid #fff; }
+    .t-gold { color: #ffe600; background: radial-gradient(circle, #ffe600 30%, #665c00 90%); border: 3px solid #fff; }
+    .t-bomb { color: #ff0055; background: radial-gradient(circle, #220011 30%, #000 90%); border: 3px dashed #ff0055; }
+    .t-ghost { color: #00f0ff; background: rgba(0,240,255,0.25); border: 2px solid #00f0ff; }
+    .t-barrel { color: #ffa726; background: radial-gradient(circle, #8d5b28 40%, #3e2723 90%); border: 4px solid #ffa726; border-radius: 12px; }
+    .t-timestop { color: #00bcd4; background: radial-gradient(circle, #00bcd4 30%, #00363a 90%); border: 3px solid #fff; }
+    .t-mirror { color: #e91e63; background: radial-gradient(circle, #e91e63 30%, #4a001f 90%); border: 3px solid #fff; }
+
+    .overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 8; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px currentColor; }
+    #freeze-overlay { background: rgba(0,240,255,0.25); color: #00f0ff; border: 15px solid #00f0ff; }
+    #reverse-overlay { background: rgba(255,0,127,0.2); color: #ff007f; border: 15px solid #ff007f; }
+
+    /* カウントダウンUI */
+    #countdown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 15; font-size: 8rem; font-weight: bold; color: #00f0ff; text-shadow: 0 0 30px #00f0ff; }
+    
+    #waiting-modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; }
+    .spinner { width: 60px; height: 60px; border: 6px solid rgba(0,240,255,0.2); border-top-color: #00f0ff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+
+  <!-- ホーム画面 -->
   <div id="home-screen" class="screen">
-    <h1>超ターゲットシューティング</h1>
-    <input type="text" id="name-input" placeholder="名前を入力" style="padding:10px; margin-bottom:15px; border-radius:15px; border:1px solid #00f0ff; background:#111; color:#fff; text-align:center;">
-    <button class="btn" onclick="startMatch()">対戦スタート</button>
+    <h1>CYBER TARGET BLITZ</h1>
+    <input type="text" id="name-input" class="input-box" placeholder="プレイヤー名を入力" maxlength="10">
+    <div class="btn-group">
+      <button class="btn" onclick="startMatch()">対戦スタート ⚔️</button>
+      <button class="btn btn-secondary" onclick="openRankings()">ランキング 🏆</button>
+      <button class="btn btn-secondary" onclick="openRules()">遊び方・ターゲット 📖</button>
+    </div>
   </div>
 
+  <!-- 対戦相手検索中 -->
+  <div id="waiting-modal" class="hidden">
+    <div class="spinner"></div>
+    <h2 style="color:#00f0ff;">対戦相手を探しています...</h2>
+    <p style="color:#aaa; margin-top:10px;">別タブまたはスマホで開くと対戦テストができます！</p>
+  </div>
+
+  <!-- カウントダウン -->
+  <div id="countdown-overlay" class="hidden">3</div>
+
+  <!-- ランキングモーダル -->
+  <div id="rank-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>🏆 月間Eloレートランキング</h3>
+      <div id="rank-list" class="rank-list">読み込み中...</div>
+      <button class="btn" onclick="closeModal('rank-modal')">閉じる</button>
+    </div>
+  </div>
+
+  <!-- 遊び方モーダル -->
+  <div id="rules-modal" class="modal hidden">
+    <div class="modal-content" style="text-align: left;">
+      <h3 style="text-align: center;">📖 ターゲット一覧と効果</h3>
+      <ul style="font-size:0.9rem; line-height: 1.8; padding-left: 20px; color:#ddd; margin:15px 0;">
+        <li>🎯 <b style="color:#ff0055;">Standard</b>: 基本標的 (+100pt)</li>
+        <li>👑 <b style="color:#ffe600;">Gold</b>: 高得点 (+800pt)</li>
+        <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボ消滅)</li>
+        <li>👻 <b style="color:#00f0ff;">Ghost</b>: 超高速消滅 (+500pt)</li>
+        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%強奪)</li>
+        <li>❄️ <b style="color:#00bcd4;">TimeStop</b>: 相手を2.5秒凍結</li>
+        <li>🪞 <b style="color:#e91e63;">Mirror</b>: 相手の画面を4秒反転</li>
+      </ul>
+      <button class="btn" style="width: 100%;" onclick="closeModal('rules-modal')">了解！</button>
+    </div>
+  </div>
+
+  <!-- ゲーム画面 -->
   <div id="game-screen" class="screen hidden" style="background:transparent;">
     <div id="header-ui">
-      <div>TIME: <span id="ui-time" class="stat-val">60</span></div>
-      <div>SCORE: <span id="ui-score" class="stat-val">0</span></div>
-      <div>COMBO: <span id="ui-combo" class="stat-val">1.00x</span></div>
+      <div class="stat-box"><div class="stat-label">TIME</div><div id="ui-time" class="stat-val">60</div></div>
+      <div class="stat-box"><div class="stat-label">SCORE</div><div id="ui-score" class="stat-val">0</div></div>
+      <div class="stat-box"><div class="stat-label">COMBO</div><div id="ui-combo" class="stat-val">1.00x</div></div>
     </div>
-    <div id="field"></div>
+    <div id="field-container"></div>
   </div>
 
-  <div id="freeze-overlay" class="overlay hidden"></div>
-  <div id="reverse-overlay" class="overlay hidden"></div>
+  <div id="freeze-overlay" class="overlay hidden">FROZEN!</div>
+  <div id="reverse-overlay" class="overlay hidden">MIRROR DEBUFF!</div>
 
+  <!-- 結果画面 -->
   <div id="result-screen" class="screen hidden">
-    <h2>ゲーム終了</h2>
-    <p>勝者: <span id="res-winner" style="color:#ff007f;">-</span></p>
-    <p>スコア: <span id="res-score" style="color:#00e676;">0</span></p>
-    <p>新レート: <span id="res-rate">-</span></p>
+    <h2>GAME OVER</h2>
+    <p style="font-size:1.4rem; margin-bottom:12px;">勝者: <span id="res-winner" style="color:#ff007f; font-weight:bold;">-</span></p>
+    <p style="font-size:1.2rem; margin-bottom:8px;">あなたのスコア: <span id="res-score" style="color:#00e676; font-weight:bold;">0</span></p>
+    <p style="font-size:1.2rem; margin-bottom:25px;">新Eloレート: <span id="res-rate" style="color:#00f0ff; font-weight:bold;">-</span></p>
     <button class="btn" onclick="location.reload()">ホームへ戻る</button>
   </div>
 
   <script>
     const socket = io();
-    let myName = "ゲスト", isReversed = false, isStunned = false, currentRoomId = null;
+    let myName = "ゲスト", currentRoomId = null;
 
     function startMatch() {
-      myName = document.getElementById('name-input').value || '名無し';
+      myName = document.getElementById('name-input').value.trim() || ('プレイヤー_' + Math.floor(Math.random()*100));
       socket.emit('init_player', myName);
       socket.emit('join_queue');
-      alert('対戦相手を探しています...');
+      document.getElementById('waiting-modal').classList.remove('hidden');
     }
+
+    function openRankings() {
+      document.getElementById('rank-modal').classList.remove('hidden');
+      socket.emit('get_rankings');
+    }
+
+    function openRules() {
+      document.getElementById('rules-modal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    socket.on('rankings_data', ({ ratings }) => {
+      const container = document.getElementById('rank-list');
+      if (!ratings || ratings.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#888;">データがありません</p>';
+        return;
+      }
+      container.innerHTML = ratings.map((r, i) => `
+        <div class="rank-item">
+          <span>${i + 1}. ${r.name}</span>
+          <span style="color:#00f0ff; font-weight:bold;">${r.rate} R</span>
+        </div>
+      `).join('');
+    });
 
     socket.on('match_found', ({ roomId }) => {
       currentRoomId = roomId;
+      document.getElementById('waiting-modal').classList.add('hidden');
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('game-screen').classList.remove('hidden');
     });
 
-    socket.on('spawn_target', (t) => {
-      const field = document.getElementById('field');
-      const el = document.createElement('div');
-      el.id = t.id; el.className = `target t-${t.type}`;
-      let posX = isReversed ? 100 - t.x : t.x;
-      el.style.left = posX + 'vw'; el.style.top = t.y + 'vh';
+    socket.on('countdown', (val) => {
+      const el = document.getElementById('countdown-overlay');
+      el.classList.remove('hidden');
+      el.innerText = val > 0 ? val : 'START!';
+      if (val === 0) {
+        setTimeout(() => el.classList.add('hidden'), 500);
+      }
+    });
 
-      if (t.type === 'normal') el.innerText = '🎯';
-      if (t.type === 'gold') el.innerText = '👑';
-      if (t.type === 'bomb') el.innerText = '💣';
-      if (t.type === 'ghost') el.innerText = '👻';
-      if (t.type === 'barrel') el.innerText = '🛢️';
-      if (t.type === 'timestop') el.innerText = '❄️';
-      if (t.type === 'mirror') el.innerText = '🪞';
+    socket.on('spawn_target', (t) => {
+      const container = document.getElementById('field-container');
+      const el = document.createElement('div');
+      el.id = t.id; 
+      el.className = `target t-${t.type}`;
+      el.style.left = t.x + 'vw'; 
+      el.style.top = t.y + 'vh';
+
+      if (t.type === 'barrel') el.innerText = `HP:${t.hp}`;
 
       el.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
-        if (isStunned) return;
-        socket.emit('hit_target', { roomId: currentRoomId, targetId: t.id, reactionTime: 0.2 });
+        socket.emit('hit_target', { roomId: currentRoomId, targetId: t.id });
       });
 
-      field.appendChild(el);
+      container.appendChild(el);
+    });
+
+    socket.on('barrel_damaged', ({ targetId, hp }) => {
+      const el = document.getElementById(targetId);
+      if (el) el.innerText = `HP:${hp}`;
     });
 
     socket.on('target_destroyed', ({ targetId }) => {
@@ -117,25 +238,31 @@
     });
 
     socket.on('apply_debuff', ({ type, duration }) => {
-      const id = type === 'FREEZE' ? 'freeze-overlay' : 'reverse-overlay';
-      const el = document.getElementById(id);
-      if (type === 'FREEZE') isStunned = true;
-      if (type === 'REVERSE') isReversed = true;
-      el.classList.remove('hidden');
-      setTimeout(() => {
-        el.classList.add('hidden');
-        if (type === 'FREEZE') isStunned = false;
-        if (type === 'REVERSE') isReversed = false;
-      }, duration);
+      if (type === 'FREEZE') {
+        const el = document.getElementById('freeze-overlay');
+        el.classList.remove('hidden');
+        setTimeout(() => el.classList.add('hidden'), duration);
+      }
+      if (type === 'REVERSE') {
+        const el = document.getElementById('reverse-overlay');
+        const container = document.getElementById('field-container');
+        el.classList.remove('hidden');
+        container.classList.add('reversed');
+        setTimeout(() => {
+          el.classList.add('hidden');
+          container.classList.remove('reversed');
+        }, duration);
+      }
     });
 
     socket.on('game_over', ({ winner, p1, p2 }) => {
       document.getElementById('game-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
-      document.getElementById('res-winner').innerText = winner || '引き分け';
+      document.getElementById('res-winner').innerText = winner;
+      
       const me = (p1.name === myName) ? p1 : p2;
       document.getElementById('res-score').innerText = me.score;
-      document.getElementById('res-rate').innerText = me.newRate;
+      document.getElementById('res-rate').innerText = `${me.oldRate} R ➔ ${me.newRate} R`;
     });
   </script>
 </body>

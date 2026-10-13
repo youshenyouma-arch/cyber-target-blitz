@@ -40,7 +40,7 @@ const STAGES = [
   { id: 'disco', name: 'ネオンディスコ 🪩', desc: '背景が七色に点滅・チカチカ変化！' },
   { id: 'gravity', name: 'グラビティゾーン 🚀', desc: '無重力！的が上へ向かって浮き上がる' },
   { id: 'warp', name: 'クロノスワープ ⏳', desc: '時空が歪み的のスピードが伸縮！' },
-  { id: 'ink', name: 'インクファクトリー 🦑', desc: '定期的にインクが飛び散り視界遮断！' }
+  { id: 'ink', name: 'インクファクトリー 🦑', desc: '定期的にカラフルインクが飛び散り視界遮断！' }
 ];
 
 let waitingPlayer = null;
@@ -281,6 +281,7 @@ function startRoomGame(roomId) {
       if (room.timeLeft <= 0) {
         clearInterval(room.timer);
         clearInterval(room.spawnTimer);
+        if (room.inkTimer) clearInterval(room.inkTimer);
         finishRoomGame(roomId);
       }
     } catch (e) { console.error(e); }
@@ -295,15 +296,13 @@ function startRoomGame(roomId) {
       const tid = 't_' + room.targetSeq;
       const rand = Math.random();
       
-      // 🎲 ターゲット確率（👑ゴールド 0.5%）
       let type = 'normal';
       if (rand < 0.10) type = 'bomb';          // 10%
       else if (rand < 0.20) type = 'ghost';     // 10%
-      else if (rand < 0.205) type = 'gold';     // ★ 0.5%
+      else if (rand < 0.205) type = 'gold';     // 0.5%
       else if (rand < 0.245) type = 'barrel';   // 4%
       else if (rand < 0.285) type = 'timestop'; // 4%
       else if (rand < 0.355) type = 'mirror';   // 7%
-      // 残り 64.5% が normal
 
       const tObj = { 
         id: tid, 
@@ -326,6 +325,36 @@ function startRoomGame(roomId) {
       room.targets[tid] = tObj;
     } catch (e) { console.error(e); }
   }, 550);
+
+  // 🦑 インクステージ：サーバーで生成した同じカラフルインク位置を全員へ同時配信
+  if (room.stage.id === 'ink') {
+    const triggerInk = () => {
+      try {
+        if (!rooms[roomId]) return;
+        const colors = [
+          '#ff007f', // ネオンピンク
+          '#00f0ff', // サイバーブルー
+          '#ffe600', // ネオンイエロー
+          '#a000ff', // ネオンパープル
+          '#00ff66'  // 蛍光グリーン
+        ];
+        const spots = [];
+        const count = Math.floor(Math.random() * 3) + 3; // 3〜5個
+        for (let i = 0; i < count; i++) {
+          spots.push({
+            x: Math.floor(Math.random() * 70 + 15),
+            y: Math.floor(Math.random() * 55 + 20),
+            size: Math.floor(Math.random() * 120 + 110),
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }
+        io.to(roomId).emit('ink_splash', spots);
+      } catch (e) { console.error(e); }
+    };
+
+    triggerInk();
+    room.inkTimer = setInterval(triggerInk, 3800);
+  }
 }
 
 function updateRoomState(roomId) {
@@ -336,6 +365,8 @@ function updateRoomState(roomId) {
 function finishRoomGame(roomId) {
   const room = rooms[roomId];
   if (!room) return;
+
+  if (room.inkTimer) clearInterval(room.inkTimer);
 
   try {
     if (room.isSolo) {
@@ -364,4 +395,15 @@ function finishRoomGame(roomId) {
 
       io.to(roomId).emit('game_over', { 
         winner: winnerName, 
-        p1: { name
+        p1: { name: room.p1.name, score: room.p1.score, oldRate: room.p1.rate, newRate: nR1 }, 
+        p2: { name: room.p2.name, score: room.p2.score, oldRate: room.p2.rate, newRate: nR2 },
+        isSolo: false
+      });
+    }
+  } catch (err) { console.error(err); }
+
+  delete rooms[roomId];
+}
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

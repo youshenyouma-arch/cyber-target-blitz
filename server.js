@@ -8,7 +8,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// 🛡️ サーバークラッシュ防止フィルター（どんなエラーが起きても止まらないように保護）
+// 🛡️ クラッシュ防止フィルター
 process.on('uncaughtException', (err) => console.error('Error:', err));
 process.on('unhandledRejection', (reason) => console.error('Rejection:', reason));
 
@@ -295,15 +295,13 @@ function startRoomGame(roomId) {
       const tid = 't_' + room.targetSeq;
       const rand = Math.random();
       
-      // 🎲 ターゲット確率（👑ゴールド 1%）
       let type = 'normal';
       if (rand < 0.10) type = 'bomb';          // 10%
       else if (rand < 0.20) type = 'ghost';     // 10%
-      else if (rand < 0.21) type = 'gold';      // ★ 1%
+      else if (rand < 0.21) type = 'gold';      // 1%
       else if (rand < 0.25) type = 'barrel';    // 4%
       else if (rand < 0.29) type = 'timestop';  // 4%
       else if (rand < 0.36) type = 'mirror';    // 7%
-      // 残り 64% が normal
 
       const tObj = { 
         id: tid, 
@@ -375,4 +373,4 @@ function finishRoomGame(roomId) {
 }
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

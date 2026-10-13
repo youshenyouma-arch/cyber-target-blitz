@@ -12,17 +12,19 @@
     .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,5,10,0.95); z-index: 10; }
     .hidden { display: none !important; }
     
-    h1 { font-size: 2.8rem; color: #00f0ff; text-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff; letter-spacing: 3px; margin-bottom: 25px; text-align: center; }
+    h1 { font-size: 2.8rem; color: #00f0ff; text-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff; letter-spacing: 3px; margin-bottom: 20px; text-align: center; }
     h2 { font-size: 2.2rem; color: #ff0055; text-shadow: 0 0 15px #ff0055; margin-bottom: 15px; }
 
     .input-box { padding: 14px 20px; margin-bottom: 20px; font-size: 1.2rem; border-radius: 30px; border: 2px solid #00f0ff; background: rgba(0,240,255,0.08); color: #fff; text-align: center; outline: none; box-shadow: 0 0 15px rgba(0,240,255,0.3); width: 280px; }
     .input-box:focus { box-shadow: 0 0 25px #00f0ff; }
 
-    .btn-group { display: flex; flex-direction: column; gap: 14px; width: 280px; }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; width: 280px; }
     .btn { padding: 14px 20px; font-size: 1.1rem; font-weight: bold; border: 2px solid #00f0ff; border-radius: 30px; background: rgba(0,240,255,0.15); color: #fff; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.2); }
     .btn:hover { background: #00f0ff; color: #000; box-shadow: 0 0 30px #00f0ff; transform: scale(1.03); }
     .btn-secondary { border-color: #ff0055; background: rgba(255,0,85,0.15); box-shadow: 0 0 15px rgba(255,0,85,0.2); }
     .btn-secondary:hover { background: #ff0055; color: #fff; box-shadow: 0 0 30px #ff0055; }
+    .btn-solo { border-color: #ffe600; background: rgba(255,230,0,0.15); color: #ffe600; box-shadow: 0 0 15px rgba(255,230,0,0.2); }
+    .btn-solo:hover { background: #ffe600; color: #000; box-shadow: 0 0 30px #ffe600; }
 
     /* モーダル */
     .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 20; }
@@ -31,37 +33,78 @@
     .rank-list { text-align: left; margin: 15px 0; }
     .rank-item { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1rem; }
 
-    /* ゲーム画面 UI */
+    /* UI & フィールド */
     #header-ui { position: absolute; top: 0; left: 0; width: 100%; height: 75px; background: rgba(10,10,20,0.9); border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5; font-weight: bold; }
     .stat-box { text-align: center; }
     .stat-label { font-size: 0.75rem; color: #888; }
     .stat-val { font-size: 1.6rem; color: #00f0ff; text-shadow: 0 0 10px #00f0ff; }
 
-    #field-container { position: absolute; top:0; left:0; width:100vw; height:100vh; transition: transform 0.3s ease; }
+    #stage-title { position: absolute; top: 85px; width: 100%; text-align: center; font-size: 1.2rem; color: #ffe600; font-weight: bold; text-shadow: 0 0 10px #ffe600; pointer-events: none; z-index: 5; }
+
+    #field-container { position: absolute; top:0; left:0; width:100vw; height:100vh; transition: transform 0.3s ease; cursor: crosshair; }
     #field-container.reversed { transform: scaleX(-1); }
 
-    /* サイバーターゲット描画 */
-    .target { position: absolute; width: 75px; height: 75px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; box-shadow: 0 0 20px currentColor; transition: transform 0.1s ease; animation: popIn 0.2s ease-out; }
-    .target:active { transform: translate(-50%, -50%) scale(0.85); }
+    /* 🗺️ マップ特殊ギミック */
+    #field-container.stage-diner { animation: shakeStage 3s ease-in-out infinite; }
+    @keyframes shakeStage {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      15% { transform: translate(-18px, 12px) rotate(-1.5deg); }
+      30% { transform: translate(18px, -12px) rotate(1.5deg); }
+      45% { transform: translate(-12px, -18px) rotate(-1deg); }
+      60% { transform: translate(12px, 18px) rotate(1deg); }
+    }
+
+    .stage-wind .target { animation: windFloat 3.5s ease-in-out infinite, popIn 0.2s ease-out !important; }
+    @keyframes windFloat {
+      0% { transform: translate(-50%, -50%) translateX(-30px); }
+      50% { transform: translate(-50%, -50%) translateX(50px); }
+      100% { transform: translate(-50%, -50%) translateX(-30px); }
+    }
+
+    body.stage-disco { animation: discoBG 2.5s infinite alternate; }
+    @keyframes discoBG {
+      0% { background: #1a0033; }
+      50% { background: #330011; }
+      100% { background: #332200; }
+    }
+
+    .stage-gravity .target { animation: gravityFloat 3s linear infinite, popIn 0.2s ease-out !important; }
+    @keyframes gravityFloat {
+      0% { transform: translate(-50%, -50%) translateY(0px); }
+      50% { transform: translate(-50%, -50%) translateY(-60px); }
+      100% { transform: translate(-50%, -50%) translateY(0px); }
+    }
+
+    .stage-warp .target { animation: warpPulse 1.5s ease-in-out infinite, popIn 0.2s ease-out !important; }
+    @keyframes warpPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.3); }
+    }
+
+    #ink-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; background: radial-gradient(circle at 30% 40%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 18%, transparent 19%), radial-gradient(circle at 70% 65%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 22%, transparent 23%); animation: inkPulse 4s ease-in-out infinite; }
+    @keyframes inkPulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+
+    /* 🎯 【〇なし】絵文字ターゲット定義 */
+    .target { position: absolute; width: 75px; height: 75px; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 4rem; filter: drop-shadow(0 0 12px rgba(255,255,255,0.6)); transition: transform 0.08s ease; animation: popIn 0.2s ease-out; }
+    .target:active { transform: translate(-50%, -50%) scale(0.8); }
     @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
 
-    .target::before { content: ''; position: absolute; width: 85%; height: 85%; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.8); animation: rotate 4s linear infinite; }
-    .target::after { content: '+'; position: absolute; font-size: 1.8rem; color: rgba(255,255,255,0.9); }
-    @keyframes rotate { to { transform: rotate(360deg); } }
+    /* 🛢️ タルの壊れていくアニメーション・ひび割れ */
+    .target.t-barrel { font-size: 3.5rem; filter: drop-shadow(0 0 15px #ffa726); }
+    .target.t-barrel.damaged { animation: barrelHit 0.15s ease-in-out; filter: drop-shadow(0 0 20px #ff0055) brightness(1.3); }
+    @keyframes barrelHit { 0% { transform: translate(-50%, -50%) scale(1.2) rotate(-5deg); } 50% { transform: translate(-50%, -50%) scale(0.9) rotate(5deg); } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); } }
 
-    .t-normal { color: #ff0055; background: radial-gradient(circle, #ff0055 30%, #55001c 90%); border: 3px solid #fff; }
-    .t-gold { color: #ffe600; background: radial-gradient(circle, #ffe600 30%, #665c00 90%); border: 3px solid #fff; }
-    .t-bomb { color: #ff0055; background: radial-gradient(circle, #220011 30%, #000 90%); border: 3px dashed #ff0055; }
-    .t-ghost { color: #00f0ff; background: rgba(0,240,255,0.25); border: 2px solid #00f0ff; }
-    .t-barrel { color: #ffa726; background: radial-gradient(circle, #8d5b28 40%, #3e2723 90%); border: 4px solid #ffa726; border-radius: 12px; }
-    .t-timestop { color: #00bcd4; background: radial-gradient(circle, #00bcd4 30%, #00363a 90%); border: 3px solid #fff; }
-    .t-mirror { color: #e91e63; background: radial-gradient(circle, #e91e63 30%, #4a001f 90%); border: 3px solid #fff; }
+    .barrel-hp-bar { position: absolute; bottom: -8px; width: 60px; height: 8px; background: rgba(0,0,0,0.7); border: 1px solid #ffa726; border-radius: 4px; overflow: hidden; }
+    .barrel-hp-fill { height: 100%; background: #ffa726; width: 100%; transition: width 0.1s linear; }
+
+    /* ⚠️ お手付き（ミス）演出 */
+    #miss-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 9; background: rgba(255,0,0,0.35); display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: bold; color: #ff0055; text-shadow: 0 0 20px #ff0055; opacity: 0; transition: opacity 0.1s ease; }
+    #miss-overlay.show { opacity: 1; }
 
     .overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 8; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px currentColor; }
     #freeze-overlay { background: rgba(0,240,255,0.25); color: #00f0ff; border: 15px solid #00f0ff; }
     #reverse-overlay { background: rgba(255,0,127,0.2); color: #ff007f; border: 15px solid #ff007f; }
 
-    /* カウントダウンUI */
     #countdown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 15; font-size: 8rem; font-weight: bold; color: #00f0ff; text-shadow: 0 0 30px #00f0ff; }
     
     #waiting-modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; }
@@ -76,9 +119,10 @@
     <h1>CYBER TARGET BLITZ</h1>
     <input type="text" id="name-input" class="input-box" placeholder="プレイヤー名を入力" maxlength="10">
     <div class="btn-group">
-      <button class="btn" onclick="startMatch()">対戦スタート ⚔️</button>
+      <button class="btn btn-solo" onclick="startSoloMatch()">ソロ練習モード 🎯</button>
+      <button class="btn" onclick="startMatch()">ランク対戦スタート ⚔️</button>
       <button class="btn btn-secondary" onclick="openRankings()">ランキング 🏆</button>
-      <button class="btn btn-secondary" onclick="openRules()">遊び方・ターゲット 📖</button>
+      <button class="btn btn-secondary" onclick="openRules()">遊び方・全7マップ 📖</button>
     </div>
   </div>
 
@@ -104,16 +148,22 @@
   <!-- 遊び方モーダル -->
   <div id="rules-modal" class="modal hidden">
     <div class="modal-content" style="text-align: left;">
-      <h3 style="text-align: center;">📖 ターゲット一覧と効果</h3>
-      <ul style="font-size:0.9rem; line-height: 1.8; padding-left: 20px; color:#ddd; margin:15px 0;">
+      <h3 style="text-align: center;">📖 ターゲットとルール</h3>
+      <ul style="font-size:0.8rem; line-height: 1.7; padding-left: 20px; color:#ddd; margin:10px 0;">
         <li>🎯 <b style="color:#ff0055;">Standard</b>: 基本標的 (+100pt)</li>
         <li>👑 <b style="color:#ffe600;">Gold</b>: 高得点 (+800pt)</li>
-        <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボ消滅)</li>
+        <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボリセット)</li>
         <li>👻 <b style="color:#00f0ff;">Ghost</b>: 超高速消滅 (+500pt)</li>
-        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%強奪)</li>
+        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (叩けば消えない / 相手の15%奪取)</li>
         <li>❄️ <b style="color:#00bcd4;">TimeStop</b>: 相手を2.5秒凍結</li>
         <li>🪞 <b style="color:#e91e63;">Mirror</b>: 相手の画面を4秒反転</li>
+        <li>⚠️ <b style="color:#ff0055;">お手付き</b>: 空振りタップでコンボリセット & -100pt</li>
       </ul>
+      <h4 style="color:#ffe600; margin-top:10px;">🗺️ 全7種類のランダムマップ</h4>
+      <p style="font-size:0.75rem; color:#aaa; line-height: 1.5;">
+        🏙️ サイバーシティ / 🍔 カオスダイナー / 🌪️ ウィンドバレー / 🪩 ネオンディスコ / 🚀 グラビティゾーン / ⏳ クロノスワープ / 🦑 インクファクトリー
+      </p>
+      <br>
       <button class="btn" style="width: 100%;" onclick="closeModal('rules-modal')">了解！</button>
     </div>
   </div>
@@ -125,9 +175,12 @@
       <div class="stat-box"><div class="stat-label">SCORE</div><div id="ui-score" class="stat-val">0</div></div>
       <div class="stat-box"><div class="stat-label">COMBO</div><div id="ui-combo" class="stat-val">1.00x</div></div>
     </div>
+    <div id="stage-title">STAGE</div>
     <div id="field-container"></div>
+    <div id="ink-overlay" class="hidden"></div>
   </div>
 
+  <div id="miss-overlay">MISS!</div>
   <div id="freeze-overlay" class="overlay hidden">FROZEN!</div>
   <div id="reverse-overlay" class="overlay hidden">MIRROR DEBUFF!</div>
 
@@ -136,13 +189,30 @@
     <h2>GAME OVER</h2>
     <p style="font-size:1.4rem; margin-bottom:12px;">勝者: <span id="res-winner" style="color:#ff007f; font-weight:bold;">-</span></p>
     <p style="font-size:1.2rem; margin-bottom:8px;">あなたのスコア: <span id="res-score" style="color:#00e676; font-weight:bold;">0</span></p>
-    <p style="font-size:1.2rem; margin-bottom:25px;">新Eloレート: <span id="res-rate" style="color:#00f0ff; font-weight:bold;">-</span></p>
+    <p style="font-size:1.2rem; margin-bottom:25px;" id="res-rate-box">新Eloレート: <span id="res-rate" style="color:#00f0ff; font-weight:bold;">-</span></p>
     <button class="btn" onclick="location.reload()">ホームへ戻る</button>
   </div>
 
   <script>
     const socket = io();
-    let myName = "ゲスト", currentRoomId = null;
+    let myName = "ゲスト", currentRoomId = null, isPlaying = false;
+
+    // 🎯 絵文字マッピング（〇枠なし）
+    const EMOJIS = {
+      normal: '🎯',
+      gold: '👑',
+      bomb: '💣',
+      ghost: '👻',
+      barrel: '🛢️',
+      timestop: '❄️',
+      mirror: '🪞'
+    };
+
+    function startSoloMatch() {
+      myName = document.getElementById('name-input').value.trim() || ('プレイヤー_' + Math.floor(Math.random()*100));
+      socket.emit('init_player', myName);
+      socket.emit('start_solo');
+    }
 
     function startMatch() {
       myName = document.getElementById('name-input').value.trim() || ('プレイヤー_' + Math.floor(Math.random()*100));
@@ -164,6 +234,15 @@
       document.getElementById(id).classList.add('hidden');
     }
 
+    // ⚠️ お手付き（背景クリック）イベントの設定
+    document.getElementById('field-container').addEventListener('pointerdown', (e) => {
+      if (!isPlaying) return;
+      // ターゲット以外の背景を押したとき
+      if (e.target.id === 'field-container' || e.target.id === 'ink-overlay') {
+        socket.emit('miss_click', { roomId: currentRoomId });
+      }
+    });
+
     socket.on('rankings_data', ({ ratings }) => {
       const container = document.getElementById('rank-list');
       if (!ratings || ratings.length === 0) {
@@ -178,22 +257,37 @@
       `).join('');
     });
 
-    socket.on('match_found', ({ roomId }) => {
+    socket.on('match_found', ({ roomId, stage }) => {
       currentRoomId = roomId;
+      isPlaying = true;
       document.getElementById('waiting-modal').classList.add('hidden');
       document.getElementById('home-screen').classList.add('hidden');
       document.getElementById('game-screen').classList.remove('hidden');
+
+      document.getElementById('stage-title').innerText = stage.name;
+      const container = document.getElementById('field-container');
+      const inkOverlay = document.getElementById('ink-overlay');
+      
+      container.className = '';
+      document.body.className = '';
+      inkOverlay.classList.add('hidden');
+
+      if (stage.id === 'diner') container.classList.add('stage-diner');
+      if (stage.id === 'wind') container.classList.add('stage-wind');
+      if (stage.id === 'disco') document.body.classList.add('stage-disco');
+      if (stage.id === 'gravity') container.classList.add('stage-gravity');
+      if (stage.id === 'warp') container.classList.add('stage-warp');
+      if (stage.id === 'ink') inkOverlay.classList.remove('hidden');
     });
 
     socket.on('countdown', (val) => {
       const el = document.getElementById('countdown-overlay');
       el.classList.remove('hidden');
       el.innerText = val > 0 ? val : 'START!';
-      if (val === 0) {
-        setTimeout(() => el.classList.add('hidden'), 500);
-      }
+      if (val === 0) setTimeout(() => el.classList.add('hidden'), 500);
     });
 
+    // 🎯 ターゲット生成（〇なし・絵文字ダイレクト表示）
     socket.on('spawn_target', (t) => {
       const container = document.getElementById('field-container');
       const el = document.createElement('div');
@@ -202,22 +296,47 @@
       el.style.left = t.x + 'vw'; 
       el.style.top = t.y + 'vh';
 
-      if (t.type === 'barrel') el.innerText = `HP:${t.hp}`;
+      el.innerText = EMOJIS[t.type] || '🎯';
+
+      // 🛢️ タルのHPゲージ追加
+      if (t.type === 'barrel') {
+        const hpBar = document.createElement('div');
+        hpBar.className = 'barrel-hp-bar';
+        hpBar.innerHTML = `<div class="barrel-hp-fill" id="hp-${t.id}"></div>`;
+        el.appendChild(hpBar);
+      }
 
       el.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
+        e.stopPropagation(); // 背景のお手付き判定を発動させない
         socket.emit('hit_target', { roomId: currentRoomId, targetId: t.id });
       });
 
       container.appendChild(el);
     });
 
-    socket.on('barrel_damaged', ({ targetId, hp }) => {
+    // 🛢️ タルのダメージ表現（ヒット時アニメーション＆HPバー更新）
+    socket.on('barrel_damaged', ({ targetId, hp, maxHp }) => {
       const el = document.getElementById(targetId);
-      if (el) el.innerText = `HP:${hp}`;
+      if (el) {
+        el.classList.remove('damaged');
+        void el.offsetWidth; // リフロー発生でアニメーションリセット
+        el.classList.add('damaged');
+
+        const hpFill = document.getElementById(`hp-${targetId}`);
+        if (hpFill) {
+          hpFill.style.width = `${(hp / maxHp) * 100}%`;
+        }
+      }
     });
 
-    socket.on('target_destroyed', ({ targetId }) => {
+    // お手付き（ミス）の警告演出
+    socket.on('miss_penalty', () => {
+      const el = document.getElementById('miss-overlay');
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 200);
+    });
+
+    socket.on('target_destroyed', ({ targetId, isBarrelDestroyed, stolenPts }) => {
       const el = document.getElementById(targetId);
       if (el) el.remove();
     });
@@ -255,14 +374,21 @@
       }
     });
 
-    socket.on('game_over', ({ winner, p1, p2 }) => {
+    socket.on('game_over', ({ winner, p1, p2, isSolo }) => {
+      isPlaying = false;
       document.getElementById('game-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
-      document.getElementById('res-winner').innerText = winner;
+      document.getElementById('res-winner').innerText = isSolo ? 'ソロ練習完了' : winner;
       
       const me = (p1.name === myName) ? p1 : p2;
       document.getElementById('res-score').innerText = me.score;
-      document.getElementById('res-rate').innerText = `${me.oldRate} R ➔ ${me.newRate} R`;
+
+      if (isSolo) {
+        document.getElementById('res-rate-box').style.display = 'none';
+      } else {
+        document.getElementById('res-rate-box').style.display = 'block';
+        document.getElementById('res-rate').innerText = `${me.oldRate} R ➔ ${me.newRate} R`;
+      }
     });
   </script>
 </body>

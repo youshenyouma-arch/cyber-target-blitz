@@ -43,18 +43,35 @@ let waitingPlayer = null;
 let rooms = {};
 
 io.on('connection', (socket) => {
-  socket.pName = "ゲスト_" + Math.floor(Math.random() * 1000);
+  socket.pName = null;
   socket.pRate = 1500;
 
-  socket.on('init_player', (name) => {
-    socket.pName = name && name.trim() ? name.trim() : "名無し";
+  // 🔒 パスコード認証処理
+  socket.on('init_player', ({ name, pass }) => {
+    const cleanName = name ? name.trim() : "";
+    const cleanPass = pass ? pass.trim() : "";
+
+    if (!cleanName || !cleanPass) {
+      socket.emit('auth_error', '名前とパスコード(暗証番号)を入力してください');
+      return;
+    }
+
     const data = loadData();
-    if (!data.players[socket.pName]) {
-      data.players[socket.pName] = { rate: 1500, games: 0 };
+    const player = data.players[cleanName];
+
+    if (player) {
+      if (player.pass !== cleanPass) {
+        socket.emit('auth_error', 'パスコードが違います！他の名前を使うか正しい暗証番号を入力してください');
+        return;
+      }
+    } else {
+      data.players[cleanName] = { pass: cleanPass, rate: 1500, games: 0 };
       saveData(data);
     }
-    socket.pRate = data.players[socket.pName].rate;
-    socket.emit('player_data', { name: socket.pName, rate: socket.pRate });
+
+    socket.pName = cleanName;
+    socket.pRate = data.players[cleanName].rate;
+    socket.emit('auth_success', { name: cleanName, rate: socket.pRate });
   });
 
   socket.on('get_rankings', () => {
@@ -68,6 +85,7 @@ io.on('connection', (socket) => {
 
   // --- ソロモード ---
   socket.on('start_solo', () => {
+    if (!socket.pName) return;
     const roomId = 'solo_' + socket.id;
     const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
     
@@ -102,6 +120,7 @@ io.on('connection', (socket) => {
 
   // --- ランク対戦 ---
   socket.on('join_queue', () => {
+    if (!socket.pName) return;
     if (waitingPlayer && waitingPlayer.id !== socket.id) {
       const roomId = 'room_' + Date.now();
       const p1 = waitingPlayer;
@@ -155,11 +174,8 @@ io.on('connection', (socket) => {
     const player = isP1 ? room.p1 : room.p2;
     const opponent = isP1 ? room.p2 : room.p1;
 
-    // 🛢️ タル処理
     if (t.type === 'barrel') {
       t.hp--;
-      
-      // 一度叩かれたら消滅タイマー解除（永久残留）
       if (t.expireTimer) {
         clearTimeout(t.expireTimer);
         t.expireTimer = null;
@@ -169,18 +185,16 @@ io.on('connection', (socket) => {
 
       if (t.hp > 0) return;
 
-      // タル破壊成功！
       const stolen = Math.round(opponent.score * 0.15);
       opponent.score = Math.max(0, opponent.score - stolen);
       player.score += stolen + 400;
       delete room.targets[targetId];
 
-      io.to(roomId).emit('target_destroyed', { targetId, isBarrelDestroyed: true, stolenPts: stolen + 400 });
+      io.to(roomId).emit('target_destroyed', { targetId });
       updateRoomState(roomId);
       return;
     }
 
-    // 通常ターゲット処理
     delete room.targets[targetId];
     if (t.expireTimer) clearTimeout(t.expireTimer);
 
@@ -203,7 +217,7 @@ io.on('connection', (socket) => {
     updateRoomState(roomId);
   });
 
-  // ⚠️ お手付き（空振りミス）
+  // ⚠️ お手付き
   socket.on('miss_click', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room) return;
@@ -257,9 +271,10 @@ function startRoomGame(roomId) {
       hp: 8 
     };
 
-    // 消滅タイマー（タルは長めの10秒、その他は通常）
+    // ★ 循環参照エラーを防ぐため、emitした後にタイマーを設定する
+    io.to(roomId).emit('spawn_target', tObj);
+
     const duration = type === 'ghost' ? 700 : (type === 'barrel' ? 10000 : 3200);
-    
     tObj.expireTimer = setTimeout(() => {
       if (room.targets[tid]) {
         delete room.targets[tid];
@@ -268,7 +283,6 @@ function startRoomGame(roomId) {
     }, duration);
 
     room.targets[tid] = tObj;
-    io.to(roomId).emit('spawn_target', tObj);
   }, 550);
 }
 
@@ -301,10 +315,8 @@ function finishRoomGame(roomId) {
     const nR2 = calcElo(room.p2.rate, room.p1.rate, p2WinVal);
 
     const data = loadData();
-    if (!data.players[room.p1.name]) data.players[room.p1.name] = { rate: 1500 };
-    if (!data.players[room.p2.name]) data.players[room.p2.name] = { rate: 1500 };
-    data.players[room.p1.name].rate = nR1;
-    data.players[room.p2.name].rate = nR2;
+    if (data.players[room.p1.name]) data.players[room.p1.name].rate = nR1;
+    if (data.players[room.p2.name]) data.players[room.p2.name].rate = nR2;
     saveData(data);
 
     io.to(roomId).emit('game_over', { 

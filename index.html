@@ -160,13 +160,37 @@
       50% { transform: translate(-50%, -50%) scale(1.3); }
     }
 
-    #ink-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; background: radial-gradient(circle at 30% 40%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 18%, transparent 19%), radial-gradient(circle at 70% 65%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 22%, transparent 23%); animation: inkPulse 4s ease-in-out infinite; }
-    @keyframes inkPulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+    /* 🎨 カラフルインクスプラッシュ（同期レイヤー） */
+    #ink-container { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; }
+    .ink-spot {
+      position: absolute; border-radius: 50%; pointer-events: none;
+      transform: translate(-50%, -50%) scale(0);
+      animation: inkSplatter 0.25s ease-out forwards, inkFade 3.5s ease-in forwards;
+      filter: blur(1px); opacity: 0.9;
+    }
+    @keyframes inkSplatter {
+      to { transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes inkFade {
+      0%, 75% { opacity: 0.9; }
+      100% { opacity: 0; }
+    }
 
     /* ターゲット表示 */
     .target { position: absolute; width: 85px; height: 85px; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 4.2rem; filter: drop-shadow(0 0 15px rgba(255,255,255,0.7)); transition: transform 0.08s ease; animation: popIn 0.2s ease-out; }
     .target:active { transform: translate(-50%, -50%) scale(0.8); }
     @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+
+    /* 👻 お化けターゲット：ふんわり半透明＋点滅 */
+    .target.t-ghost {
+      opacity: 0.45;
+      filter: drop-shadow(0 0 18px #00f0ff);
+      animation: ghostFade 0.6s ease-in-out infinite alternate, popIn 0.2s ease-out !important;
+    }
+    @keyframes ghostFade {
+      0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.85); }
+      100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1.1); }
+    }
 
     .target.t-barrel { font-size: 3.8rem; filter: drop-shadow(0 0 15px #ffa726); }
     .target.t-barrel.damaged { animation: barrelHit 0.15s ease-in-out; filter: drop-shadow(0 0 20px #ff0055) brightness(1.3); }
@@ -260,9 +284,9 @@
       <div style="font-size:0.85rem; color:#00f0ff; font-weight:bold; margin-bottom:8px;">【ターゲットルール】</div>
       <ul style="font-size:0.8rem; line-height: 1.7; padding-left: 18px; color:#ddd; margin-bottom:15px;">
         <li>🎯 <b style="color:#ff0055;">Standard</b>: 基本標的 (+100pt)</li>
-        <li>👑 <b style="color:#ffe600;">Gold</b>: 超激レア標的 (+800pt / 出現率1%)</li>
+        <li>👑 <b style="color:#ffe600;">Gold</b>: 超激レア標的 (+1000pt / 出現率0.5%)</li>
         <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボリセット)</li>
-        <li>👻 <b style="color:#00f0ff;">Ghost</b>: 超高速消滅 (+500pt)</li>
+        <li>👻 <b style="color:#00f0ff;">Ghost</b>: 半透明・高速消滅 (+1500pt)</li>
         <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%奪取 / 叩けば残留)</li>
         <li>❄️ <b style="color:#00bcd4;">TimeStop</b>: 相手を2.5秒凍結</li>
         <li>🪞 <b style="color:#e91e63;">Mirror</b>: 相手の画面を4秒反転</li>
@@ -277,7 +301,7 @@
         <li style="margin-bottom: 4px;">🪩 <b>ネオンディスコ</b>: 背景のネオンがフラッシュ点滅</li>
         <li style="margin-bottom: 4px;">🚀 <b>グラビティゾーン</b>: 無重力で標的が浮き上がる</li>
         <li style="margin-bottom: 4px;">⏳ <b>クロノスワープ</b>: 標的のサイズや速度が伸縮・変速</li>
-        <li style="margin-bottom: 4px;">🦑 <b>インクファクトリー</b>: 巨大な黒インクが視界を遮断</li>
+        <li style="margin-bottom: 4px;">🦑 <b>インクファクトリー</b>: 全員共通のカラフルインクが視界遮断</li>
       </ul>
       
       <button class="cyber-btn" style="width:100%; margin-top:20px;" onclick="closeModal('rules-modal')">CLOSE</button>
@@ -293,7 +317,7 @@
     </div>
     <div id="stage-title">STAGE</div>
     <div id="field-container"></div>
-    <div id="ink-overlay" class="hidden"></div>
+    <div id="ink-container"></div>
   </div>
 
   <div id="miss-overlay">MISS!</div>
@@ -388,7 +412,7 @@
     // お手付き判定
     document.getElementById('field-container').addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
-      if (e.target.id === 'field-container' || e.target.id === 'ink-overlay') {
+      if (e.target.id === 'field-container') {
         showScorePopup(e.clientX, e.clientY, '-100', '#ff0055');
         socket.emit('miss_click', { roomId: currentRoomId });
       }
@@ -442,18 +466,36 @@
 
       document.getElementById('stage-title').innerText = stage.name;
       const container = document.getElementById('field-container');
-      const inkOverlay = document.getElementById('ink-overlay');
+      const inkContainer = document.getElementById('ink-container');
       
       container.className = '';
       document.body.className = '';
-      inkOverlay.classList.add('hidden');
+      inkContainer.innerHTML = '';
 
       if (stage.id === 'diner') container.classList.add('stage-diner');
       if (stage.id === 'wind') container.classList.add('stage-wind');
       if (stage.id === 'disco') document.body.classList.add('stage-disco');
       if (stage.id === 'gravity') container.classList.add('stage-gravity');
       if (stage.id === 'warp') container.classList.add('stage-warp');
-      if (stage.id === 'ink') inkOverlay.classList.remove('hidden');
+    });
+
+    // 🎨 サーバー同期カラフルインクスプラッシュの受取り＆描画
+    socket.on('ink_splash', (spots) => {
+      const container = document.getElementById('ink-container');
+      if (!container) return;
+      spots.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'ink-spot';
+        el.style.left = s.x + 'vw';
+        el.style.top = s.y + 'vh';
+        el.style.width = s.size + 'px';
+        el.style.height = s.size + 'px';
+        el.style.background = s.color;
+        el.style.boxShadow = `0 0 30px ${s.color}`;
+        container.appendChild(el);
+
+        setTimeout(() => el.remove(), 3500);
+      });
     });
 
     socket.on('countdown', (val) => {
@@ -483,10 +525,9 @@
       el.addEventListener('pointerdown', (e) => {
         e.stopPropagation();
 
-        // 💥 タイプ別にヒット位置へのポップアップ演出生成
         let text = '+100', color = '#00f0ff';
-        if (t.type === 'gold') { text = '+800'; color = '#ffe600'; }
-        else if (t.type === 'ghost') { text = '+500'; color = '#00f0ff'; }
+        if (t.type === 'gold') { text = '+1000'; color = '#ffe600'; }
+        else if (t.type === 'ghost') { text = '+1500'; color = '#00f0ff'; }
         else if (t.type === 'bomb') { text = '-400'; color = '#ff0055'; }
         else if (t.type === 'timestop' || t.type === 'mirror') { text = '+200'; color = '#00bcd4'; }
         else if (t.type === 'barrel') { text = 'HIT!'; color = '#ffa726'; }

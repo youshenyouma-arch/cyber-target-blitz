@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
   socket.pName = null;
   socket.pRate = 1500;
 
-  // 🔒 パスコード認証処理
+  // 🔒 パスコード認証
   socket.on('init_player', ({ name, pass }) => {
     const cleanName = name ? name.trim() : "";
     const cleanPass = pass ? pass.trim() : "";
@@ -83,7 +83,14 @@ io.on('connection', (socket) => {
     socket.emit('rankings_data', { ratings });
   });
 
-  // --- ソロモード ---
+  // 🔌 切断時の破棄処理（バグ防止）
+  socket.on('disconnect', () => {
+    if (waitingPlayer && waitingPlayer.id === socket.id) {
+      waitingPlayer = null;
+    }
+  });
+
+  // 🎯 ソロモード
   socket.on('start_solo', () => {
     if (!socket.pName) return;
     const roomId = 'solo_' + socket.id;
@@ -118,16 +125,23 @@ io.on('connection', (socket) => {
     }, 1000);
   });
 
-  // --- ランク対戦 ---
+  // ⚔️ ランク対戦キュー
   socket.on('join_queue', () => {
     if (!socket.pName) return;
-    if (waitingPlayer && waitingPlayer.id !== socket.id) {
+
+    // 古い接続や自分が残っていたら破棄
+    if (waitingPlayer && (!waitingPlayer.connected || waitingPlayer.id === socket.id)) {
+      waitingPlayer = null;
+    }
+
+    if (waitingPlayer) {
       const roomId = 'room_' + Date.now();
       const p1 = waitingPlayer;
       const p2 = socket;
       waitingPlayer = null;
 
-      p1.join(roomId); p2.join(roomId);
+      p1.join(roomId); 
+      p2.join(roomId);
       const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
 
       rooms[roomId] = {
@@ -271,7 +285,6 @@ function startRoomGame(roomId) {
       hp: 8 
     };
 
-    // ★ 循環参照エラーを防ぐため、emitした後にタイマーを設定する
     io.to(roomId).emit('spawn_target', tObj);
 
     const duration = type === 'ghost' ? 700 : (type === 'barrel' ? 10000 : 3200);

@@ -269,15 +269,15 @@ function startRoomGame(roomId) {
     const tid = 't_' + room.targetSeq;
     const rand = Math.random();
     
-    // 🎲 ターゲット確率計算（調整済み）
+    // 🎲 ターゲット確率計算（👑ゴールドを1%に指定）
     let type = 'normal';
     if (rand < 0.10) type = 'bomb';          // 10%
     else if (rand < 0.20) type = 'ghost';     // 10%
-    else if (rand < 0.25) type = 'gold';      // 5%  (以前より減少)
-    else if (rand < 0.29) type = 'barrel';    // 4%  (以前より減少)
-    else if (rand < 0.33) type = 'timestop';  // 4%  (以前より減少)
-    else if (rand < 0.40) type = 'mirror';    // 7%
-    // 残り60% (0.40 ~ 1.00) が normal (以前の40%から大きく増加)
+    else if (rand < 0.21) type = 'gold';      // ★ 1% (激レア化！)
+    else if (rand < 0.25) type = 'barrel';    // 4%
+    else if (rand < 0.29) type = 'timestop';  // 4%
+    else if (rand < 0.36) type = 'mirror';    // 7%
+    // 残り64% (0.36 ~ 1.00) が normal
 
     const tObj = { 
       id: tid, 

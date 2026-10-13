@@ -231,9 +231,9 @@ io.on('connection', (socket) => {
       if (t.expireTimer) clearTimeout(t.expireTimer);
 
       let pts = 100;
-      if (t.type === 'gold') pts = 800;
+      if (t.type === 'gold') pts = 1000;
       if (t.type === 'bomb') { pts = -400; player.combo = 1.0; player.comboCount = 0; }
-      if (t.type === 'ghost') pts = 500;
+      if (t.type === 'ghost') pts = 1500;
       if (t.type === 'timestop') { pts = 200; if(!room.isSolo) io.to(opponent.id).emit('apply_debuff', { type: 'FREEZE', duration: 2500 }); }
       if (t.type === 'mirror') { pts = 200; if(!room.isSolo) io.to(opponent.id).emit('apply_debuff', { type: 'REVERSE', duration: 4000 }); }
 
@@ -295,13 +295,15 @@ function startRoomGame(roomId) {
       const tid = 't_' + room.targetSeq;
       const rand = Math.random();
       
+      // 🎲 ターゲット確率（👑ゴールド 0.5%）
       let type = 'normal';
       if (rand < 0.10) type = 'bomb';          // 10%
       else if (rand < 0.20) type = 'ghost';     // 10%
-      else if (rand < 0.21) type = 'gold';      // 1%
-      else if (rand < 0.25) type = 'barrel';    // 4%
-      else if (rand < 0.29) type = 'timestop';  // 4%
-      else if (rand < 0.36) type = 'mirror';    // 7%
+      else if (rand < 0.205) type = 'gold';     // ★ 0.5%
+      else if (rand < 0.245) type = 'barrel';   // 4%
+      else if (rand < 0.285) type = 'timestop'; // 4%
+      else if (rand < 0.355) type = 'mirror';   // 7%
+      // 残り 64.5% が normal
 
       const tObj = { 
         id: tid, 
@@ -362,15 +364,4 @@ function finishRoomGame(roomId) {
 
       io.to(roomId).emit('game_over', { 
         winner: winnerName, 
-        p1: { name: room.p1.name, score: room.p1.score, oldRate: room.p1.rate, newRate: nR1 }, 
-        p2: { name: room.p2.name, score: room.p2.score, oldRate: room.p2.rate, newRate: nR2 },
-        isSolo: false
-      });
-    }
-  } catch (err) { console.error(err); }
-
-  delete rooms[roomId];
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        p1: { name

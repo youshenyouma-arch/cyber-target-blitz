@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>超ターゲットシューティング</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body { margin: 0; background: #0a0a12; color: #fff; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
+    .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10,10,18,0.95); z-index: 10; }
+    .hidden { display: none !important; }
+    h1 { font-size: 2.2rem; color: #00f0ff; text-shadow: 0 0 15px #00f0ff; }
+    .btn { padding: 12px 30px; margin: 10px; font-size: 1.1rem; border: 2px solid #00f0ff; border-radius: 25px; background: rgba(0,240,255,0.1); color: #fff; cursor: pointer; }
+    #header-ui { position: absolute; top: 0; left: 0; width: 100%; height: 70px; background: rgba(15,15,30,0.85); border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5; }
+    .stat-val { font-size: 1.4rem; color: #00f0ff; }
+    #field { position: absolute; top:0; left:0; width:100vw; height:100vh; }
+    .target { position: absolute; width: 65px; height: 65px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .t-normal { background: #ff0055; border: 3px solid #fff; box-shadow: 0 0 15px #ff0055; }
+    .t-gold { background: #ffe600; border: 3px solid #fff; box-shadow: 0 0 20px #ffe600; }
+    .t-bomb { background: #330033; border: 3px dashed #ff0055; }
+    .t-ghost { background: rgba(255,255,255,0.3); border: 2px dashed #00f0ff; }
+    .t-barrel { background: #5c3a21; border: 4px solid #8d5b28; border-radius: 10px; }
+    .t-timestop { background: #00bcd4; border: 3px solid #fff; }
+    .t-mirror { background: #e91e63; border: 3px solid #fff; }
+    .overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 8; }
+    #freeze-overlay { background: rgba(0,240,255,0.3); border: 10px solid #00f0ff; }
+    #reverse-overlay { border: 10px solid #ff007f; }
+  </style>
+</head>
+<body>
+  <div id="home-screen" class="screen">
+    <h1>超ターゲットシューティング</h1>
+    <input type="text" id="name-input" placeholder="名前を入力" style="padding:10px; margin-bottom:15px; border-radius:15px; border:1px solid #00f0ff; background:#111; color:#fff; text-align:center;">
+    <button class="btn" onclick="startMatch()">対戦スタート</button>
+  </div>
+
+  <div id="game-screen" class="screen hidden" style="background:transparent;">
+    <div id="header-ui">
+      <div>TIME: <span id="ui-time" class="stat-val">60</span></div>
+      <div>SCORE: <span id="ui-score" class="stat-val">0</span></div>
+      <div>COMBO: <span id="ui-combo" class="stat-val">1.00x</span></div>
+    </div>
+    <div id="field"></div>
+  </div>
+
+  <div id="freeze-overlay" class="overlay hidden"></div>
+  <div id="reverse-overlay" class="overlay hidden"></div>
+
+  <div id="result-screen" class="screen hidden">
+    <h2>ゲーム終了</h2>
+    <p>勝者: <span id="res-winner" style="color:#ff007f;">-</span></p>
+    <p>スコア: <span id="res-score" style="color:#00e676;">0</span></p>
+    <p>新レート: <span id="res-rate">-</span></p>
+    <button class="btn" onclick="location.reload()">ホームへ戻る</button>
+  </div>
+
+  <script>
+    const socket = io();
+    let myName = "ゲスト", isReversed = false, isStunned = false, currentRoomId = null;
+
+    function startMatch() {
+      myName = document.getElementById('name-input').value || '名無し';
+      socket.emit('init_player', myName);
+      socket.emit('join_queue');
+      alert('対戦相手を探しています...');
+    }
+
+    socket.on('match_found', ({ roomId }) => {
+      currentRoomId = roomId;
+      document.getElementById('home-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+    });
+
+    socket.on('spawn_target', (t) => {
+      const field = document.getElementById('field');
+      const el = document.createElement('div');
+      el.id = t.id; el.className = `target t-${t.type}`;
+      let posX = isReversed ? 100 - t.x : t.x;
+      el.style.left = posX + 'vw'; el.style.top = t.y + 'vh';
+
+      if (t.type === 'normal') el.innerText = '🎯';
+      if (t.type === 'gold') el.innerText = '👑';
+      if (t.type === 'bomb') el.innerText = '💣';
+      if (t.type === 'ghost') el.innerText = '👻';
+      if (t.type === 'barrel') el.innerText = '🛢️';
+      if (t.type === 'timestop') el.innerText = '❄️';
+      if (t.type === 'mirror') el.innerText = '🪞';
+
+      el.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        if (isStunned) return;
+        socket.emit('hit_target', { roomId: currentRoomId, targetId: t.id, reactionTime: 0.2 });
+      });
+
+      field.appendChild(el);
+    });
+
+    socket.on('target_destroyed', ({ targetId }) => {
+      const el = document.getElementById(targetId);
+      if (el) el.remove();
+    });
+
+    socket.on('target_expired', ({ targetId }) => {
+      const el = document.getElementById(targetId);
+      if (el) el.remove();
+    });
+
+    socket.on('time_update', ({ timeLeft }) => {
+      document.getElementById('ui-time').innerText = timeLeft;
+    });
+
+    socket.on('room_state', ({ p1, p2 }) => {
+      const me = (p1.name === myName) ? p1 : p2;
+      document.getElementById('ui-score').innerText = me.score;
+      document.getElementById('ui-combo').innerText = me.combo.toFixed(2) + 'x';
+    });
+
+    socket.on('apply_debuff', ({ type, duration }) => {
+      const id = type === 'FREEZE' ? 'freeze-overlay' : 'reverse-overlay';
+      const el = document.getElementById(id);
+      if (type === 'FREEZE') isStunned = true;
+      if (type === 'REVERSE') isReversed = true;
+      el.classList.remove('hidden');
+      setTimeout(() => {
+        el.classList.add('hidden');
+        if (type === 'FREEZE') isStunned = false;
+        if (type === 'REVERSE') isReversed = false;
+      }, duration);
+    });
+
+    socket.on('game_over', ({ winner, p1, p2 }) => {
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.remove('hidden');
+      document.getElementById('res-winner').innerText = winner || '引き分け';
+      const me = (p1.name === myName) ? p1 : p2;
+      document.getElementById('res-score').innerText = me.score;
+      document.getElementById('res-rate').innerText = me.newRate;
+    });
+  </script>
+</body>
+</html>

@@ -5,44 +5,125 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>CYBER TARGET BLITZ</title>
   <script src="/socket.io/socket.io.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; }
-    body { background: #05050a; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
-    
-    .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(5,5,10,0.95); z-index: 10; }
+    * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; font-family: 'Orbitron', 'Noto Sans JP', sans-serif; }
+    body { background: #030308; color: #fff; overflow: hidden; width: 100vw; height: 100vh; position: relative; }
+
+    /* 背景サイバーグリッド 3D アニメーション */
+    .bg-grid {
+      position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background-image: 
+        linear-gradient(to right, rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+      background-size: 50px 50px;
+      transform: perspective(500px) rotateX(60deg);
+      animation: gridMove 8s linear infinite;
+      z-index: 1; pointer-events: none;
+    }
+    @keyframes gridMove {
+      0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+      100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+    }
+
+    /* 走査線オーバーレイ */
+    .scanline {
+      position: absolute; top:0; left:0; width:100%; height:100%;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px; z-index: 2; pointer-events: none; opacity: 0.6;
+    }
+
+    .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(3, 3, 8, 0.85); z-index: 10; backdrop-filter: blur(5px); }
     .hidden { display: none !important; }
-    
-    h1 { font-size: 2.8rem; color: #00f0ff; text-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff; letter-spacing: 3px; margin-bottom: 20px; text-align: center; }
-    h2 { font-size: 2.2rem; color: #ff0055; text-shadow: 0 0 15px #ff0055; margin-bottom: 15px; }
 
-    .input-box { padding: 12px 20px; margin-bottom: 12px; font-size: 1.1rem; border-radius: 30px; border: 2px solid #00f0ff; background: rgba(0,240,255,0.08); color: #fff; text-align: center; outline: none; box-shadow: 0 0 15px rgba(0,240,255,0.3); width: 280px; }
-    .input-box:focus { box-shadow: 0 0 25px #00f0ff; }
+    /* メインタイトル (グリッチ効果) */
+    .title-box { text-align: center; margin-bottom: 30px; position: relative; z-index: 3; }
+    h1 {
+      font-size: 3rem; font-weight: 900; color: #00f0ff; letter-spacing: 4px;
+      text-shadow: 0 0 10px #00f0ff, 0 0 30px rgba(0,240,255,0.6);
+      position: relative; display: inline-block;
+    }
+    .title-sub { font-size: 0.85rem; color: #ff0055; letter-spacing: 8px; font-weight: 700; margin-top: 5px; text-shadow: 0 0 8px #ff0055; }
 
-    .btn-group { display: flex; flex-direction: column; gap: 12px; width: 280px; }
-    .btn { padding: 14px 20px; font-size: 1.1rem; font-weight: bold; border: 2px solid #00f0ff; border-radius: 30px; background: rgba(0,240,255,0.15); color: #fff; cursor: pointer; transition: all 0.2s ease; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.2); }
-    .btn:hover { background: #00f0ff; color: #000; box-shadow: 0 0 30px #00f0ff; transform: scale(1.03); }
-    .btn-secondary { border-color: #ff0055; background: rgba(255,0,85,0.15); box-shadow: 0 0 15px rgba(255,0,85,0.2); }
-    .btn-secondary:hover { background: #ff0055; color: #fff; box-shadow: 0 0 30px #ff0055; }
-    .btn-solo { border-color: #ffe600; background: rgba(255,230,0,0.15); color: #ffe600; box-shadow: 0 0 15px rgba(255,230,0,0.2); }
-    .btn-solo:hover { background: #ffe600; color: #000; box-shadow: 0 0 30px #ffe600; }
+    /* サイバーパネルコンテナ */
+    .cyber-panel {
+      background: rgba(10, 15, 30, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      padding: 25px; width: 340px;
+      clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+      box-shadow: 0 0 25px rgba(0,240,255,0.15), inset 0 0 15px rgba(0,240,255,0.05);
+      position: relative; z-index: 3;
+    }
+    .cyber-panel::before {
+      content: 'SYSTEM READY // AUTHENTICATION';
+      display: block; font-size: 0.65rem; color: #00f0ff; letter-spacing: 2px; margin-bottom: 15px; opacity: 0.8;
+      border-bottom: 1px solid rgba(0,240,255,0.2); padding-bottom: 5px;
+    }
 
-    .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 20; }
-    .modal-content { background: #0d0d1a; border: 2px solid #00f0ff; border-radius: 20px; padding: 25px; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 35px rgba(0,240,255,0.4); text-align: center; }
-    .modal-content h3 { color: #00f0ff; margin-bottom: 15px; font-size: 1.6rem; }
-    .rank-list { text-align: left; margin: 15px 0; }
-    .rank-item { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1rem; }
+    .field-group { margin-bottom: 12px; text-align: left; }
+    .field-label { font-size: 0.7rem; color: #888; margin-bottom: 4px; letter-spacing: 1px; font-weight: bold; }
 
-    #header-ui { position: absolute; top: 0; left: 0; width: 100%; height: 75px; background: rgba(10,10,20,0.9); border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5; font-weight: bold; }
+    .cyber-input {
+      width: 100%; padding: 12px 15px; font-size: 1rem; color: #fff;
+      background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3);
+      outline: none; transition: all 0.2s ease;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    }
+    .cyber-input:focus { border-color: #00f0ff; background: rgba(0, 240, 255, 0.12); box-shadow: 0 0 15px rgba(0,240,255,0.4); }
+
+    /* ボタンデザイン */
+    .btn-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    .cyber-btn {
+      position: relative; padding: 14px; font-size: 1rem; font-weight: 900; color: #fff;
+      background: rgba(0, 240, 255, 0.15); border: none; cursor: pointer;
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+      transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .cyber-btn::before {
+      content: ''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: #00f0ff;
+    }
+    .cyber-btn:hover {
+      background: #00f0ff; color: #000; box-shadow: 0 0 25px #00f0ff; transform: translateY(-2px);
+    }
+    .cyber-btn:hover::before { background: #fff; }
+
+    .cyber-btn.btn-solo { background: rgba(255, 230, 0, 0.15); color: #ffe600; }
+    .cyber-btn.btn-solo::before { background: #ffe600; }
+    .cyber-btn.btn-solo:hover { background: #ffe600; color: #000; box-shadow: 0 0 25px #ffe600; }
+
+    .cyber-btn.btn-sub { background: rgba(255, 0, 85, 0.15); color: #ff0055; font-size: 0.9rem; padding: 10px; }
+    .cyber-btn.btn-sub::before { background: #ff0055; }
+    .cyber-btn.btn-sub:hover { background: #ff0055; color: #fff; box-shadow: 0 0 25px #ff0055; }
+
+    /* モーダル */
+    .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 20; backdrop-filter: blur(8px); }
+    .modal-content {
+      background: #090c18; border: 1px solid #00f0ff; padding: 30px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;
+      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+      box-shadow: 0 0 40px rgba(0,240,255,0.3); text-align: left;
+    }
+    .modal-content h3 { color: #00f0ff; margin-bottom: 20px; font-size: 1.5rem; text-align: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 10px; letter-spacing: 2px; }
+
+    .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.95rem; }
+
+    /* アーケード HUD (ゲーム画面) */
+    #header-ui {
+      position: absolute; top: 0; left: 0; width: 100%; height: 80px;
+      background: linear-gradient(to bottom, rgba(5,10,25,0.95), rgba(5,10,25,0.6));
+      border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5;
+      box-shadow: 0 0 20px rgba(0,240,255,0.2);
+    }
     .stat-box { text-align: center; }
-    .stat-label { font-size: 0.75rem; color: #888; }
-    .stat-val { font-size: 1.6rem; color: #00f0ff; text-shadow: 0 0 10px #00f0ff; }
+    .stat-label { font-size: 0.65rem; color: #888; letter-spacing: 2px; }
+    .stat-val { font-size: 1.8rem; font-weight: 900; color: #00f0ff; text-shadow: 0 0 12px #00f0ff; }
 
-    #stage-title { position: absolute; top: 85px; width: 100%; text-align: center; font-size: 1.2rem; color: #ffe600; font-weight: bold; text-shadow: 0 0 10px #ffe600; pointer-events: none; z-index: 5; }
+    #stage-title { position: absolute; top: 90px; width: 100%; text-align: center; font-size: 1.1rem; color: #ffe600; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 12px #ffe600; pointer-events: none; z-index: 5; }
 
     #field-container { position: absolute; top:0; left:0; width:100vw; height:100vh; transition: transform 0.3s ease; cursor: crosshair; }
     #field-container.reversed { transform: scaleX(-1); }
 
-    /* マップギミック */
+    /* マップ特殊ギミック */
     #field-container.stage-diner { animation: shakeStage 3s ease-in-out infinite; }
     @keyframes shakeStage {
       0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -82,8 +163,8 @@
     #ink-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; background: radial-gradient(circle at 30% 40%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 18%, transparent 19%), radial-gradient(circle at 70% 65%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 22%, transparent 23%); animation: inkPulse 4s ease-in-out infinite; }
     @keyframes inkPulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
 
-    /* ターゲット */
-    .target { position: absolute; width: 85px; height: 85px; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 4.2rem; filter: drop-shadow(0 0 12px rgba(255,255,255,0.6)); transition: transform 0.08s ease; animation: popIn 0.2s ease-out; }
+    /* ターゲット表示 */
+    .target { position: absolute; width: 85px; height: 85px; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 4.2rem; filter: drop-shadow(0 0 15px rgba(255,255,255,0.7)); transition: transform 0.08s ease; animation: popIn 0.2s ease-out; }
     .target:active { transform: translate(-50%, -50%) scale(0.8); }
     @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
 
@@ -91,62 +172,83 @@
     .target.t-barrel.damaged { animation: barrelHit 0.15s ease-in-out; filter: drop-shadow(0 0 20px #ff0055) brightness(1.3); }
     @keyframes barrelHit { 0% { transform: translate(-50%, -50%) scale(1.2) rotate(-5deg); } 50% { transform: translate(-50%, -50%) scale(0.9) rotate(5deg); } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); } }
 
-    .barrel-hp-bar { position: absolute; bottom: -8px; width: 65px; height: 8px; background: rgba(0,0,0,0.7); border: 1px solid #ffa726; border-radius: 4px; overflow: hidden; }
+    .barrel-hp-bar { position: absolute; bottom: -8px; width: 65px; height: 8px; background: rgba(0,0,0,0.8); border: 1px solid #ffa726; border-radius: 4px; overflow: hidden; }
     .barrel-hp-fill { height: 100%; background: #ffa726; width: 100%; transition: width 0.1s linear; }
 
-    #miss-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 9; background: rgba(255,0,0,0.35); display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: bold; color: #ff0055; text-shadow: 0 0 20px #ff0055; opacity: 0; transition: opacity 0.1s ease; }
+    #miss-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 9; background: rgba(255,0,85,0.25); display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 900; color: #ff0055; text-shadow: 0 0 20px #ff0055; opacity: 0; transition: opacity 0.1s ease; }
     #miss-overlay.show { opacity: 1; }
 
-    .overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 8; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; text-shadow: 0 0 20px currentColor; }
+    .overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 8; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; text-shadow: 0 0 20px currentColor; }
     #freeze-overlay { background: rgba(0,240,255,0.25); color: #00f0ff; border: 15px solid #00f0ff; }
     #reverse-overlay { background: rgba(255,0,127,0.2); color: #ff007f; border: 15px solid #ff007f; }
 
-    #countdown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 15; font-size: 8rem; font-weight: bold; color: #00f0ff; text-shadow: 0 0 30px #00f0ff; }
+    #countdown-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 15; font-size: 9rem; font-weight: 900; color: #00f0ff; text-shadow: 0 0 35px #00f0ff; }
     
-    #waiting-modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; }
-    .spinner { width: 60px; height: 60px; border: 6px solid rgba(0,240,255,0.2); border-top-color: #00f0ff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    #waiting-modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; }
+    .spinner { width: 60px; height: 60px; border: 4px solid rgba(0,240,255,0.15); border-top-color: #00f0ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px #00f0ff; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
+  <!-- 背景演出 -->
+  <div class="bg-grid"></div>
+  <div class="scanline"></div>
+
   <!-- ホーム画面 -->
   <div id="home-screen" class="screen">
-    <h1>CYBER TARGET BLITZ</h1>
-    <input type="text" id="name-input" class="input-box" placeholder="プレイヤー名を入力" maxlength="10">
-    <input type="password" id="pass-input" class="input-box" placeholder="パスコード(暗証番号)" maxlength="12">
-    
-    <div class="btn-group">
-      <button class="btn btn-solo" onclick="handleAuthAndAction('solo')">ソロ練習モード 🎯</button>
-      <button class="btn" onclick="handleAuthAndAction('rank')">ランク対戦スタート ⚔️</button>
-      <button class="btn btn-secondary" onclick="openRankings()">ランキング 🏆</button>
-      <button class="btn btn-secondary" onclick="openRules()">遊び方・全7マップ 📖</button>
+    <div class="title-box">
+      <h1>CYBER TARGET BLITZ</h1>
+      <div class="title-sub">REAL-TIME SHOOTING BATTLE</div>
+    </div>
+
+    <div class="cyber-panel">
+      <div class="field-group">
+        <div class="field-label">PLAYER HANDLE // ID</div>
+        <input type="text" id="name-input" class="cyber-input" placeholder="名前を入力" maxlength="10">
+      </div>
+      <div class="field-group">
+        <div class="field-label">SECURITY PASSCODE</div>
+        <input type="password" id="pass-input" class="cyber-input" placeholder="暗証番号" maxlength="12">
+      </div>
+
+      <div class="btn-container">
+        <button class="cyber-btn" onclick="handleAuthAndAction('rank')">⚔️ ランク対戦マッチ</button>
+        <button class="cyber-btn btn-solo" onclick="handleAuthAndAction('solo')">🎯 ソロトレーニング</button>
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+          <button class="cyber-btn btn-sub" style="flex:1;" onclick="openRankings()">🏆 ランキング</button>
+          <button class="cyber-btn btn-sub" style="flex:1;" onclick="openRules()">📖 マニュアル</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div id="waiting-modal" class="hidden">
     <div class="spinner"></div>
-    <h2 style="color:#00f0ff;">対戦相手を探しています...</h2>
-    <p style="color:#aaa; margin-top:10px;">別タブまたはスマホで開くと対戦テストができます！</p>
+    <h2 style="color:#00f0ff; font-size:1.6rem; letter-spacing:2px;">SEARCHING OPPONENT...</h2>
+    <p style="color:#aaa; margin-top:12px; font-size:0.85rem;">別タブまたはスマホでアクセスすると対戦テスト可能</p>
   </div>
 
   <div id="countdown-overlay" class="hidden">3</div>
 
+  <!-- ランキングモーダル -->
   <div id="rank-modal" class="modal hidden">
     <div class="modal-content">
-      <h3>🏆 月間Eloレートランキング</h3>
+      <h3>🏆 TOP RATINGS</h3>
       <div id="rank-list" class="rank-list">読み込み中...</div>
-      <button class="btn" onclick="closeModal('rank-modal')">閉じる</button>
+      <button class="cyber-btn" style="width:100%; margin-top:15px;" onclick="closeModal('rank-modal')">CLOSE</button>
     </div>
   </div>
 
-  <!-- 📖 遊び方・詳細マップ解説モーダル -->
+  <!-- マニュアルモーダル -->
   <div id="rules-modal" class="modal hidden">
-    <div class="modal-content" style="text-align: left;">
-      <h3 style="text-align: center;">📖 ターゲットとルール</h3>
-      <ul style="font-size:0.8rem; line-height: 1.7; padding-left: 20px; color:#ddd; margin:10px 0;">
+    <div class="modal-content">
+      <h3>📖 GAME MANUAL</h3>
+      
+      <div style="font-size:0.85rem; color:#00f0ff; font-weight:bold; margin-bottom:8px;">【ターゲットルール】</div>
+      <ul style="font-size:0.8rem; line-height: 1.7; padding-left: 18px; color:#ddd; margin-bottom:15px;">
         <li>🎯 <b style="color:#ff0055;">Standard</b>: 基本標的 (+100pt)</li>
-        <li>👑 <b style="color:#ffe600;">Gold</b>: 超激レア標的 (+800pt / 確率1%)</li>
+        <li>👑 <b style="color:#ffe600;">Gold</b>: 超激レア標的 (+800pt / 出現率1%)</li>
         <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボリセット)</li>
         <li>👻 <b style="color:#00f0ff;">Ghost</b>: 超高速消滅 (+500pt)</li>
         <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%奪取 / 叩けば残留)</li>
@@ -155,21 +257,22 @@
         <li>⚠️ <b style="color:#ff0055;">お手付き</b>: 空振りでコンボリセット & -100pt</li>
       </ul>
 
-      <h4 style="color:#ffe600; margin-top:12px; font-size:1rem;">🗺️ 全7種類のステージギミック</h4>
-      <ul style="font-size:0.75rem; color:#aaa; line-height: 1.6; padding-left: 18px; margin-top: 5px;">
-        <li style="margin-bottom: 4px;">🏙️ <b>サイバーシティ</b>: 基本の標準ステージ。ギミックなしで純粋なエイム速度と正確さを競う！</li>
-        <li style="margin-bottom: 4px;">🍔 <b>カオスダイナー</b>: 厨房大崩壊！画面全体がグラグラ激しく揺れ動き、狙いを定める難易度が急上昇！</li>
-        <li style="margin-bottom: 4px;">🌪️ <b>ウィンドバレー</b>: 猛烈な強風！出現した標的が左右にゆらゆら大きく不規則に流される！</li>
-        <li style="margin-bottom: 4px;">🪩 <b>ネオンディスコ</b>: 視界眩惑！背景のネオンが七色に激しく点滅・明滅し、目を惑わせる！</li>
-        <li style="margin-bottom: 4px;">🚀 <b>グラビティゾーン</b>: 無重力空間！出現した標的がふわふわと上空へ向かって浮上・上昇する！</li>
-        <li style="margin-bottom: 4px;">⏳ <b>クロノスワープ</b>: 時空歪曲！標的の大きさや出現速度が急激に伸縮・変速するハプニングゾーン！</li>
-        <li style="margin-bottom: 4px;">🦑 <b>インクファクトリー</b>: 視界遮断！定期的に大きな黒インクが画面を覆い隠し、標的が見えなくなる！</li>
+      <div style="font-size:0.85rem; color:#ffe600; font-weight:bold; margin-bottom:8px;">【全7マップ特徴】</div>
+      <ul style="font-size:0.75rem; color:#ccc; line-height: 1.6; padding-left: 18px;">
+        <li style="margin-bottom: 4px;">🏙️ <b>サイバーシティ</b>: 基本の標準マップ</li>
+        <li style="margin-bottom: 4px;">🍔 <b>カオスダイナー</b>: 画面全体がグラグラ激揺れ</li>
+        <li style="margin-bottom: 4px;">🌪️ <b>ウィンドバレー</b>: 強風で標的が左右に不規則に流される</li>
+        <li style="margin-bottom: 4px;">🪩 <b>ネオンディスコ</b>: 背景のネオンがフラッシュ点滅</li>
+        <li style="margin-bottom: 4px;">🚀 <b>グラビティゾーン</b>: 無重力で標的が浮き上がる</li>
+        <li style="margin-bottom: 4px;">⏳ <b>クロノスワープ</b>: 標的のサイズや速度が伸縮・変速</li>
+        <li style="margin-bottom: 4px;">🦑 <b>インクファクトリー</b>: 巨大な黒インクが視界を遮断</li>
       </ul>
-      <br>
-      <button class="btn" style="width: 100%;" onclick="closeModal('rules-modal')">了解！</button>
+      
+      <button class="cyber-btn" style="width:100%; margin-top:20px;" onclick="closeModal('rules-modal')">CLOSE</button>
     </div>
   </div>
 
+  <!-- ゲーム画面 -->
   <div id="game-screen" class="screen hidden" style="background:transparent;">
     <div id="header-ui">
       <div class="stat-box"><div class="stat-label">TIME</div><div id="ui-time" class="stat-val">60</div></div>
@@ -185,12 +288,15 @@
   <div id="freeze-overlay" class="overlay hidden">FROZEN!</div>
   <div id="reverse-overlay" class="overlay hidden">MIRROR DEBUFF!</div>
 
+  <!-- 結果画面 -->
   <div id="result-screen" class="screen hidden">
-    <h2>GAME OVER</h2>
-    <p style="font-size:1.4rem; margin-bottom:12px;">勝者: <span id="res-winner" style="color:#ff007f; font-weight:bold;">-</span></p>
-    <p style="font-size:1.2rem; margin-bottom:8px;">あなたのスコア: <span id="res-score" style="color:#00e676; font-weight:bold;">0</span></p>
-    <p style="font-size:1.2rem; margin-bottom:25px;" id="res-rate-box">新Eloレート: <span id="res-rate" style="color:#00f0ff; font-weight:bold;">-</span></p>
-    <button class="btn" onclick="location.reload()">ホームへ戻る</button>
+    <h2 style="font-size:2.8rem; letter-spacing:3px;">GAME OVER</h2>
+    <div class="cyber-panel" style="text-align:center; margin-top:15px;">
+      <p style="font-size:1.3rem; margin-bottom:12px;">WINNER: <span id="res-winner" style="color:#ff007f; font-weight:bold;">-</span></p>
+      <p style="font-size:1.1rem; margin-bottom:8px;">SCORE: <span id="res-score" style="color:#00e676; font-weight:bold;">0</span></p>
+      <p style="font-size:1.1rem; margin-bottom:20px;" id="res-rate-box">NEW ELO: <span id="res-rate" style="color:#00f0ff; font-weight:bold;">-</span></p>
+      <button class="cyber-btn" style="width:100%;" onclick="location.reload()">RETURN HOME</button>
+    </div>
   </div>
 
   <script>
@@ -253,7 +359,7 @@
       document.getElementById(id).classList.add('hidden');
     }
 
-    // お手付き判定（背景クリック）
+    // お手付き判定
     document.getElementById('field-container').addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
       if (e.target.id === 'field-container' || e.target.id === 'ink-overlay') {
@@ -261,7 +367,7 @@
       }
     });
 
-    // 🛡️ 誤判定防止「透明クッション」生成関数
+    // 🛡️ 透明クッション
     function convertToCushion(el, duration = 400) {
       if (!el) return;
       el.innerText = '';

@@ -83,7 +83,7 @@ io.on('connection', (socket) => {
     socket.emit('rankings_data', { ratings });
   });
 
-  // 🔌 切断時の破棄処理（バグ防止）
+  // 🔌 切断時の自動お掃除
   socket.on('disconnect', () => {
     if (waitingPlayer && waitingPlayer.id === socket.id) {
       waitingPlayer = null;
@@ -129,7 +129,6 @@ io.on('connection', (socket) => {
   socket.on('join_queue', () => {
     if (!socket.pName) return;
 
-    // 古い接続や自分が残っていたら破棄
     if (waitingPlayer && (!waitingPlayer.connected || waitingPlayer.id === socket.id)) {
       waitingPlayer = null;
     }
@@ -269,13 +268,16 @@ function startRoomGame(roomId) {
     room.targetSeq++;
     const tid = 't_' + room.targetSeq;
     const rand = Math.random();
+    
+    // 🎲 ターゲット確率計算（調整済み）
     let type = 'normal';
-    if (rand < 0.15) type = 'bomb';
-    else if (rand < 0.28) type = 'ghost';
-    else if (rand < 0.38) type = 'gold';
-    else if (rand < 0.45) type = 'barrel';
-    else if (rand < 0.52) type = 'timestop';
-    else if (rand < 0.60) type = 'mirror';
+    if (rand < 0.10) type = 'bomb';          // 10%
+    else if (rand < 0.20) type = 'ghost';     // 10%
+    else if (rand < 0.25) type = 'gold';      // 5%  (以前より減少)
+    else if (rand < 0.29) type = 'barrel';    // 4%  (以前より減少)
+    else if (rand < 0.33) type = 'timestop';  // 4%  (以前より減少)
+    else if (rand < 0.40) type = 'mirror';    // 7%
+    // 残り60% (0.40 ~ 1.00) が normal (以前の40%から大きく増加)
 
     const tObj = { 
       id: tid, 

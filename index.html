@@ -15,7 +15,7 @@
     h1 { font-size: 2.8rem; color: #00f0ff; text-shadow: 0 0 20px #00f0ff, 0 0 40px #00f0ff; letter-spacing: 3px; margin-bottom: 20px; text-align: center; }
     h2 { font-size: 2.2rem; color: #ff0055; text-shadow: 0 0 15px #ff0055; margin-bottom: 15px; }
 
-    .input-box { padding: 14px 20px; margin-bottom: 20px; font-size: 1.2rem; border-radius: 30px; border: 2px solid #00f0ff; background: rgba(0,240,255,0.08); color: #fff; text-align: center; outline: none; box-shadow: 0 0 15px rgba(0,240,255,0.3); width: 280px; }
+    .input-box { padding: 12px 20px; margin-bottom: 12px; font-size: 1.1rem; border-radius: 30px; border: 2px solid #00f0ff; background: rgba(0,240,255,0.08); color: #fff; text-align: center; outline: none; box-shadow: 0 0 15px rgba(0,240,255,0.3); width: 280px; }
     .input-box:focus { box-shadow: 0 0 25px #00f0ff; }
 
     .btn-group { display: flex; flex-direction: column; gap: 12px; width: 280px; }
@@ -26,14 +26,12 @@
     .btn-solo { border-color: #ffe600; background: rgba(255,230,0,0.15); color: #ffe600; box-shadow: 0 0 15px rgba(255,230,0,0.2); }
     .btn-solo:hover { background: #ffe600; color: #000; box-shadow: 0 0 30px #ffe600; }
 
-    /* モーダル */
     .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 20; }
     .modal-content { background: #0d0d1a; border: 2px solid #00f0ff; border-radius: 20px; padding: 25px; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto; box-shadow: 0 0 35px rgba(0,240,255,0.4); text-align: center; }
     .modal-content h3 { color: #00f0ff; margin-bottom: 15px; font-size: 1.6rem; }
     .rank-list { text-align: left; margin: 15px 0; }
     .rank-item { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1rem; }
 
-    /* UI & フィールド */
     #header-ui { position: absolute; top: 0; left: 0; width: 100%; height: 75px; background: rgba(10,10,20,0.9); border-bottom: 2px solid #00f0ff; display: flex; justify-content: space-around; align-items: center; z-index: 5; font-weight: bold; }
     .stat-box { text-align: center; }
     .stat-label { font-size: 0.75rem; color: #888; }
@@ -44,7 +42,6 @@
     #field-container { position: absolute; top:0; left:0; width:100vw; height:100vh; transition: transform 0.3s ease; cursor: crosshair; }
     #field-container.reversed { transform: scaleX(-1); }
 
-    /* 🗺️ マップ特殊ギミック */
     #field-container.stage-diner { animation: shakeStage 3s ease-in-out infinite; }
     @keyframes shakeStage {
       0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -84,12 +81,10 @@
     #ink-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; background: radial-gradient(circle at 30% 40%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 18%, transparent 19%), radial-gradient(circle at 70% 65%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 22%, transparent 23%); animation: inkPulse 4s ease-in-out infinite; }
     @keyframes inkPulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
 
-    /* 🎯 【〇なし】絵文字ターゲット定義 */
     .target { position: absolute; width: 75px; height: 75px; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 4rem; filter: drop-shadow(0 0 12px rgba(255,255,255,0.6)); transition: transform 0.08s ease; animation: popIn 0.2s ease-out; }
     .target:active { transform: translate(-50%, -50%) scale(0.8); }
     @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
 
-    /* 🛢️ タルの壊れていくアニメーション・ひび割れ */
     .target.t-barrel { font-size: 3.5rem; filter: drop-shadow(0 0 15px #ffa726); }
     .target.t-barrel.damaged { animation: barrelHit 0.15s ease-in-out; filter: drop-shadow(0 0 20px #ff0055) brightness(1.3); }
     @keyframes barrelHit { 0% { transform: translate(-50%, -50%) scale(1.2) rotate(-5deg); } 50% { transform: translate(-50%, -50%) scale(0.9) rotate(5deg); } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); } }
@@ -97,7 +92,6 @@
     .barrel-hp-bar { position: absolute; bottom: -8px; width: 60px; height: 8px; background: rgba(0,0,0,0.7); border: 1px solid #ffa726; border-radius: 4px; overflow: hidden; }
     .barrel-hp-fill { height: 100%; background: #ffa726; width: 100%; transition: width 0.1s linear; }
 
-    /* ⚠️ お手付き（ミス）演出 */
     #miss-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 9; background: rgba(255,0,0,0.35); display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: bold; color: #ff0055; text-shadow: 0 0 20px #ff0055; opacity: 0; transition: opacity 0.1s ease; }
     #miss-overlay.show { opacity: 1; }
 
@@ -114,29 +108,28 @@
 </head>
 <body>
 
-  <!-- ホーム画面 -->
+  <!-- ホーム画面 (暗証番号入力欄を追加) -->
   <div id="home-screen" class="screen">
     <h1>CYBER TARGET BLITZ</h1>
     <input type="text" id="name-input" class="input-box" placeholder="プレイヤー名を入力" maxlength="10">
+    <input type="password" id="pass-input" class="input-box" placeholder="パスコード(暗証番号)" maxlength="12">
+    
     <div class="btn-group">
-      <button class="btn btn-solo" onclick="startSoloMatch()">ソロ練習モード 🎯</button>
-      <button class="btn" onclick="startMatch()">ランク対戦スタート ⚔️</button>
+      <button class="btn btn-solo" onclick="handleAuthAndAction('solo')">ソロ練習モード 🎯</button>
+      <button class="btn" onclick="handleAuthAndAction('rank')">ランク対戦スタート ⚔️</button>
       <button class="btn btn-secondary" onclick="openRankings()">ランキング 🏆</button>
       <button class="btn btn-secondary" onclick="openRules()">遊び方・全7マップ 📖</button>
     </div>
   </div>
 
-  <!-- 対戦相手検索中 -->
   <div id="waiting-modal" class="hidden">
     <div class="spinner"></div>
     <h2 style="color:#00f0ff;">対戦相手を探しています...</h2>
     <p style="color:#aaa; margin-top:10px;">別タブまたはスマホで開くと対戦テストができます！</p>
   </div>
 
-  <!-- カウントダウン -->
   <div id="countdown-overlay" class="hidden">3</div>
 
-  <!-- ランキングモーダル -->
   <div id="rank-modal" class="modal hidden">
     <div class="modal-content">
       <h3>🏆 月間Eloレートランキング</h3>
@@ -145,7 +138,6 @@
     </div>
   </div>
 
-  <!-- 遊び方モーダル -->
   <div id="rules-modal" class="modal hidden">
     <div class="modal-content" style="text-align: left;">
       <h3 style="text-align: center;">📖 ターゲットとルール</h3>
@@ -154,21 +146,18 @@
         <li>👑 <b style="color:#ffe600;">Gold</b>: 高得点 (+800pt)</li>
         <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボリセット)</li>
         <li>👻 <b style="color:#00f0ff;">Ghost</b>: 超高速消滅 (+500pt)</li>
-        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (叩けば消えない / 相手の15%奪取)</li>
+        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%奪取)</li>
         <li>❄️ <b style="color:#00bcd4;">TimeStop</b>: 相手を2.5秒凍結</li>
         <li>🪞 <b style="color:#e91e63;">Mirror</b>: 相手の画面を4秒反転</li>
         <li>⚠️ <b style="color:#ff0055;">お手付き</b>: 空振りタップでコンボリセット & -100pt</li>
       </ul>
-      <h4 style="color:#ffe600; margin-top:10px;">🗺️ 全7種類のランダムマップ</h4>
-      <p style="font-size:0.75rem; color:#aaa; line-height: 1.5;">
-        🏙️ サイバーシティ / 🍔 カオスダイナー / 🌪️ ウィンドバレー / 🪩 ネオンディスコ / 🚀 グラビティゾーン / ⏳ クロノスワープ / 🦑 インクファクトリー
-      </p>
+      <h4 style="color:#ffe600; margin-top:10px;">🔒 安全なアカウント管理</h4>
+      <p style="font-size:0.75rem; color:#aaa;">名前とパスコードを設定することで、自分以外の第三者によるレートや名前の横取りを防げます！</p>
       <br>
       <button class="btn" style="width: 100%;" onclick="closeModal('rules-modal')">了解！</button>
     </div>
   </div>
 
-  <!-- ゲーム画面 -->
   <div id="game-screen" class="screen hidden" style="background:transparent;">
     <div id="header-ui">
       <div class="stat-box"><div class="stat-label">TIME</div><div id="ui-time" class="stat-val">60</div></div>
@@ -184,7 +173,6 @@
   <div id="freeze-overlay" class="overlay hidden">FROZEN!</div>
   <div id="reverse-overlay" class="overlay hidden">MIRROR DEBUFF!</div>
 
-  <!-- 結果画面 -->
   <div id="result-screen" class="screen hidden">
     <h2>GAME OVER</h2>
     <p style="font-size:1.4rem; margin-bottom:12px;">勝者: <span id="res-winner" style="color:#ff007f; font-weight:bold;">-</span></p>
@@ -195,31 +183,50 @@
 
   <script>
     const socket = io();
-    let myName = "ゲスト", currentRoomId = null, isPlaying = false;
+    let currentRoomId = null, isPlaying = false, pendingMode = null;
 
-    // 🎯 絵文字マッピング（〇枠なし）
     const EMOJIS = {
-      normal: '🎯',
-      gold: '👑',
-      bomb: '💣',
-      ghost: '👻',
-      barrel: '🛢️',
-      timestop: '❄️',
-      mirror: '🪞'
+      normal: '🎯', gold: '👑', bomb: '💣', ghost: '👻', barrel: '🛢️', timestop: '❄️', mirror: '🪞'
     };
 
-    function startSoloMatch() {
-      myName = document.getElementById('name-input').value.trim() || ('プレイヤー_' + Math.floor(Math.random()*100));
-      socket.emit('init_player', myName);
-      socket.emit('start_solo');
+    window.onload = () => {
+      const savedName = localStorage.getItem('cyber_name');
+      const savedPass = localStorage.getItem('cyber_pass');
+      if (savedName) document.getElementById('name-input').value = savedName;
+      if (savedPass) document.getElementById('pass-input').value = savedPass;
+    };
+
+    function handleAuthAndAction(mode) {
+      const name = document.getElementById('name-input').value.trim();
+      const pass = document.getElementById('pass-input').value.trim();
+
+      if (!name || !pass) {
+        alert('名前とパスコード(暗証番号)の両方を入力してください！');
+        return;
+      }
+
+      pendingMode = mode;
+      socket.emit('init_player', { name, pass });
     }
 
-    function startMatch() {
-      myName = document.getElementById('name-input').value.trim() || ('プレイヤー_' + Math.floor(Math.random()*100));
-      socket.emit('init_player', myName);
-      socket.emit('join_queue');
-      document.getElementById('waiting-modal').classList.remove('hidden');
-    }
+    socket.on('auth_error', (msg) => {
+      alert(msg);
+      pendingMode = null;
+    });
+
+    socket.on('auth_success', ({ name, rate }) => {
+      const pass = document.getElementById('pass-input').value.trim();
+      localStorage.setItem('cyber_name', name);
+      localStorage.setItem('cyber_pass', pass);
+
+      if (pendingMode === 'solo') {
+        socket.emit('start_solo');
+      } else if (pendingMode === 'rank') {
+        socket.emit('join_queue');
+        document.getElementById('waiting-modal').classList.remove('hidden');
+      }
+      pendingMode = null;
+    });
 
     function openRankings() {
       document.getElementById('rank-modal').classList.remove('hidden');
@@ -234,10 +241,8 @@
       document.getElementById(id).classList.add('hidden');
     }
 
-    // ⚠️ お手付き（背景クリック）イベントの設定
     document.getElementById('field-container').addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
-      // ターゲット以外の背景を押したとき
       if (e.target.id === 'field-container' || e.target.id === 'ink-overlay') {
         socket.emit('miss_click', { roomId: currentRoomId });
       }
@@ -287,7 +292,6 @@
       if (val === 0) setTimeout(() => el.classList.add('hidden'), 500);
     });
 
-    // 🎯 ターゲット生成（〇なし・絵文字ダイレクト表示）
     socket.on('spawn_target', (t) => {
       const container = document.getElementById('field-container');
       const el = document.createElement('div');
@@ -298,7 +302,6 @@
 
       el.innerText = EMOJIS[t.type] || '🎯';
 
-      // 🛢️ タルのHPゲージ追加
       if (t.type === 'barrel') {
         const hpBar = document.createElement('div');
         hpBar.className = 'barrel-hp-bar';
@@ -307,19 +310,18 @@
       }
 
       el.addEventListener('pointerdown', (e) => {
-        e.stopPropagation(); // 背景のお手付き判定を発動させない
+        e.stopPropagation();
         socket.emit('hit_target', { roomId: currentRoomId, targetId: t.id });
       });
 
       container.appendChild(el);
     });
 
-    // 🛢️ タルのダメージ表現（ヒット時アニメーション＆HPバー更新）
     socket.on('barrel_damaged', ({ targetId, hp, maxHp }) => {
       const el = document.getElementById(targetId);
       if (el) {
         el.classList.remove('damaged');
-        void el.offsetWidth; // リフロー発生でアニメーションリセット
+        void el.offsetWidth;
         el.classList.add('damaged');
 
         const hpFill = document.getElementById(`hp-${targetId}`);
@@ -329,14 +331,13 @@
       }
     });
 
-    // お手付き（ミス）の警告演出
     socket.on('miss_penalty', () => {
       const el = document.getElementById('miss-overlay');
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 200);
     });
 
-    socket.on('target_destroyed', ({ targetId, isBarrelDestroyed, stolenPts }) => {
+    socket.on('target_destroyed', ({ targetId }) => {
       const el = document.getElementById(targetId);
       if (el) el.remove();
     });
@@ -351,7 +352,8 @@
     });
 
     socket.on('room_state', ({ p1, p2 }) => {
-      const me = (p1.name === myName) ? p1 : p2;
+      const meName = localStorage.getItem('cyber_name');
+      const me = (p1.name === meName) ? p1 : p2;
       document.getElementById('ui-score').innerText = me.score;
       document.getElementById('ui-combo').innerText = me.combo.toFixed(2) + 'x';
     });
@@ -380,7 +382,8 @@
       document.getElementById('result-screen').classList.remove('hidden');
       document.getElementById('res-winner').innerText = isSolo ? 'ソロ練習完了' : winner;
       
-      const me = (p1.name === myName) ? p1 : p2;
+      const meName = localStorage.getItem('cyber_name');
+      const me = (p1.name === meName) ? p1 : p2;
       document.getElementById('res-score').innerText = me.score;
 
       if (isSolo) {

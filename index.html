@@ -27,7 +27,7 @@
     .btn-solo:hover { background: #ffe600; color: #000; box-shadow: 0 0 30px #ffe600; }
 
     .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 20; }
-    .modal-content { background: #0d0d1a; border: 2px solid #00f0ff; border-radius: 20px; padding: 25px; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto; box-shadow: 0 0 35px rgba(0,240,255,0.4); text-align: center; }
+    .modal-content { background: #0d0d1a; border: 2px solid #00f0ff; border-radius: 20px; padding: 25px; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 35px rgba(0,240,255,0.4); text-align: center; }
     .modal-content h3 { color: #00f0ff; margin-bottom: 15px; font-size: 1.6rem; }
     .rank-list { text-align: left; margin: 15px 0; }
     .rank-item { display: flex; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1rem; }
@@ -140,21 +140,31 @@
     </div>
   </div>
 
+  <!-- 📖 遊び方・詳細マップ解説モーダル -->
   <div id="rules-modal" class="modal hidden">
     <div class="modal-content" style="text-align: left;">
       <h3 style="text-align: center;">📖 ターゲットとルール</h3>
       <ul style="font-size:0.8rem; line-height: 1.7; padding-left: 20px; color:#ddd; margin:10px 0;">
         <li>🎯 <b style="color:#ff0055;">Standard</b>: 基本標的 (+100pt)</li>
-        <li>👑 <b style="color:#ffe600;">Gold</b>: 高得点 (+800pt)</li>
+        <li>👑 <b style="color:#ffe600;">Gold</b>: 超激レア標的 (+800pt / 確率1%)</li>
         <li>💣 <b style="color:#ff0055;">Bomb</b>: トラップ (-400pt & コンボリセット)</li>
         <li>👻 <b style="color:#00f0ff;">Ghost</b>: 超高速消滅 (+500pt)</li>
-        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%奪取)</li>
+        <li>🛢️ <b style="color:#ffa726;">Barrel</b>: 8連打破壊 (相手の15%奪取 / 叩けば残留)</li>
         <li>❄️ <b style="color:#00bcd4;">TimeStop</b>: 相手を2.5秒凍結</li>
         <li>🪞 <b style="color:#e91e63;">Mirror</b>: 相手の画面を4秒反転</li>
         <li>⚠️ <b style="color:#ff0055;">お手付き</b>: 空振りでコンボリセット & -100pt</li>
       </ul>
-      <h4 style="color:#ffe600; margin-top:10px;">🛡️ ミス誤検知防止クッション</h4>
-      <p style="font-size:0.75rem; color:#aaa;">タル連打後や的消滅直後のタップは「透明クッション」が吸収するため、理不尽なお手付きミスは発生しません！</p>
+
+      <h4 style="color:#ffe600; margin-top:12px; font-size:1rem;">🗺️ 全7種類のステージギミック</h4>
+      <ul style="font-size:0.75rem; color:#aaa; line-height: 1.6; padding-left: 18px; margin-top: 5px;">
+        <li style="margin-bottom: 4px;">🏙️ <b>サイバーシティ</b>: 基本の標準ステージ。ギミックなしで純粋なエイム速度と正確さを競う！</li>
+        <li style="margin-bottom: 4px;">🍔 <b>カオスダイナー</b>: 厨房大崩壊！画面全体がグラグラ激しく揺れ動き、狙いを定める難易度が急上昇！</li>
+        <li style="margin-bottom: 4px;">🌪️ <b>ウィンドバレー</b>: 猛烈な強風！出現した標的が左右にゆらゆら大きく不規則に流される！</li>
+        <li style="margin-bottom: 4px;">🪩 <b>ネオンディスコ</b>: 視界眩惑！背景のネオンが七色に激しく点滅・明滅し、目を惑わせる！</li>
+        <li style="margin-bottom: 4px;">🚀 <b>グラビティゾーン</b>: 無重力空間！出現した標的がふわふわと上空へ向かって浮上・上昇する！</li>
+        <li style="margin-bottom: 4px;">⏳ <b>クロノスワープ</b>: 時空歪曲！標的の大きさや出現速度が急激に伸縮・変速するハプニングゾーン！</li>
+        <li style="margin-bottom: 4px;">🦑 <b>インクファクトリー</b>: 視界遮断！定期的に大きな黒インクが画面を覆い隠し、標的が見えなくなる！</li>
+      </ul>
       <br>
       <button class="btn" style="width: 100%;" onclick="closeModal('rules-modal')">了解！</button>
     </div>
@@ -254,7 +264,6 @@
     // 🛡️ 誤判定防止「透明クッション」生成関数
     function convertToCushion(el, duration = 400) {
       if (!el) return;
-      // 見た目を消去
       el.innerText = '';
       el.style.background = 'transparent';
       el.style.border = 'none';
@@ -262,15 +271,13 @@
       el.style.filter = 'none';
       el.style.animation = 'none';
       
-      // 判定エリアをやや広め(110px)にしてクリックを無効化吸収
       el.style.width = '110px';
       el.style.height = '110px';
       el.style.zIndex = '3';
 
-      // クリックイベントの親バブリングを遮断し、MISS判定を防ぐ
       const clone = el.cloneNode(true);
       clone.addEventListener('pointerdown', (e) => {
-        e.stopPropagation(); // 空振りを吸収！
+        e.stopPropagation();
       });
 
       if (el.parentNode) {
@@ -368,16 +375,14 @@
       setTimeout(() => el.classList.remove('show'), 200);
     });
 
-    // 🎯 破壊時：即削除せず透明クッションに変換（連打ミス吸収）
     socket.on('target_destroyed', ({ targetId }) => {
       const el = document.getElementById(targetId);
-      if (el) convertToCushion(el, 450); // 450msの間、あまりのタップを吸収
+      if (el) convertToCushion(el, 450);
     });
 
-    // 🎯 消滅時：即削除せず透明クッションに変換（タッチ誤差ミス吸収）
     socket.on('target_expired', ({ targetId }) => {
       const el = document.getElementById(targetId);
-      if (el) convertToCushion(el, 300); // 300msの間、ギリギリタップを吸収
+      if (el) convertToCushion(el, 300);
     });
 
     socket.on('time_update', ({ timeLeft }) => {

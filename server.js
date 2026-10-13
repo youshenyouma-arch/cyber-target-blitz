@@ -29,7 +29,6 @@ function calcElo(ratingA, ratingB, actualScoreA) {
   return Math.round(ratingA + K * (actualScoreA - expectedA));
 }
 
-// ★ 全7種類のマップ定義
 const STAGES = [
   { id: 'city', name: 'サイバーシティ 🏙️', desc: '標準的なハイスピードステージ' },
   { id: 'diner', name: 'カオスダイナー 🍔', desc: '画面全体が激しく揺れ動く！' },
@@ -67,7 +66,7 @@ io.on('connection', (socket) => {
     socket.emit('rankings_data', { ratings });
   });
 
-  // --- ソロモード開始 ---
+  // --- ソロモード ---
   socket.on('start_solo', () => {
     const roomId = 'solo_' + socket.id;
     const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
@@ -101,7 +100,7 @@ io.on('connection', (socket) => {
     }, 1000);
   });
 
-  // --- 対戦キュー参加 ---
+  // --- ランク対戦 ---
   socket.on('join_queue', () => {
     if (waitingPlayer && waitingPlayer.id !== socket.id) {
       const roomId = 'room_' + Date.now();
@@ -146,6 +145,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 🎯 ターゲット命中
   socket.on('hit_target', ({ roomId, targetId }) => {
     const room = rooms[roomId];
     if (!room || !room.targets[targetId]) return;
@@ -155,21 +155,35 @@ io.on('connection', (socket) => {
     const player = isP1 ? room.p1 : room.p2;
     const opponent = isP1 ? room.p2 : room.p1;
 
+    // 🛢️ タル処理
     if (t.type === 'barrel') {
       t.hp--;
-      io.to(roomId).emit('barrel_damaged', { targetId, hp: t.hp });
+      
+      // 一度叩かれたら消滅タイマー解除（永久残留）
+      if (t.expireTimer) {
+        clearTimeout(t.expireTimer);
+        t.expireTimer = null;
+      }
+
+      io.to(roomId).emit('barrel_damaged', { targetId, hp: t.hp, maxHp: 8 });
+
       if (t.hp > 0) return;
 
+      // タル破壊成功！
       const stolen = Math.round(opponent.score * 0.15);
       opponent.score = Math.max(0, opponent.score - stolen);
-      player.score += stolen + 300;
+      player.score += stolen + 400;
       delete room.targets[targetId];
-      io.to(roomId).emit('target_destroyed', { targetId });
+
+      io.to(roomId).emit('target_destroyed', { targetId, isBarrelDestroyed: true, stolenPts: stolen + 400 });
       updateRoomState(roomId);
       return;
     }
 
+    // 通常ターゲット処理
     delete room.targets[targetId];
+    if (t.expireTimer) clearTimeout(t.expireTimer);
+
     let pts = 100;
     if (t.type === 'gold') pts = 800;
     if (t.type === 'bomb') { pts = -400; player.combo = 1.0; player.comboCount = 0; }
@@ -186,6 +200,22 @@ io.on('connection', (socket) => {
     }
 
     io.to(roomId).emit('target_destroyed', { targetId });
+    updateRoomState(roomId);
+  });
+
+  // ⚠️ お手付き（空振りミス）
+  socket.on('miss_click', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    const isP1 = room.p1.id === socket.id;
+    const player = isP1 ? room.p1 : room.p2;
+
+    player.combo = 1.0;
+    player.comboCount = 0;
+    player.score = Math.max(0, player.score - 100);
+
+    socket.emit('miss_penalty');
     updateRoomState(roomId);
   });
 });
@@ -226,16 +256,20 @@ function startRoomGame(roomId) {
       y: Math.floor(Math.random() * 55 + 20), 
       hp: 8 
     };
-    room.targets[tid] = tObj;
-    io.to(roomId).emit('spawn_target', tObj);
 
-    setTimeout(() => {
+    // 消滅タイマー（タルは長めの10秒、その他は通常）
+    const duration = type === 'ghost' ? 700 : (type === 'barrel' ? 10000 : 3200);
+    
+    tObj.expireTimer = setTimeout(() => {
       if (room.targets[tid]) {
         delete room.targets[tid];
         io.to(roomId).emit('target_expired', { targetId: tid });
       }
-    }, type === 'ghost' ? 700 : 3200);
-  }, 500);
+    }, duration);
+
+    room.targets[tid] = tObj;
+    io.to(roomId).emit('spawn_target', tObj);
+  }, 550);
 }
 
 function updateRoomState(roomId) {

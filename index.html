@@ -10,7 +10,6 @@
     * { box-sizing: border-box; user-select: none; margin: 0; padding: 0; font-family: 'Orbitron', 'Noto Sans JP', sans-serif; }
     body { background: #030308; color: #fff; overflow: hidden; width: 100vw; height: 100vh; position: relative; }
 
-    /* 背景サイバーグリッド 3D アニメーション */
     .bg-grid {
       position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
       background-image: 
@@ -27,7 +26,6 @@
       100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
     }
 
-    /* 走査線オーバーレイ */
     .scanline {
       position: absolute; top:0; left:0; width:100%; height:100%;
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
@@ -37,8 +35,7 @@
     .screen { position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(3, 3, 8, 0.85); z-index: 10; backdrop-filter: blur(5px); }
     .hidden { display: none !important; }
 
-    /* メインタイトル */
-    .title-box { text-align: center; margin-bottom: 30px; position: relative; z-index: 3; }
+    .title-box { text-align: center; margin-bottom: 25px; position: relative; z-index: 3; }
     h1 {
       font-size: 2.8rem; font-weight: 900; color: #00f0ff; letter-spacing: 4px;
       text-shadow: 0 0 10px #00f0ff, 0 0 30px rgba(0,240,255,0.6);
@@ -46,36 +43,34 @@
     }
     .title-sub { font-size: 0.85rem; color: #ff0055; letter-spacing: 8px; font-weight: 700; margin-top: 5px; text-shadow: 0 0 8px #ff0055; }
 
-    /* サイバーパネルコンテナ */
     .cyber-panel {
       background: rgba(10, 15, 30, 0.75);
       border: 1px solid rgba(0, 240, 255, 0.4);
-      padding: 25px; width: 340px;
+      padding: 22px; width: 340px;
       clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
       box-shadow: 0 0 25px rgba(0,240,255,0.15), inset 0 0 15px rgba(0,240,255,0.05);
       position: relative; z-index: 3;
     }
     .cyber-panel::before {
       content: 'SYSTEM READY // AUTHENTICATION';
-      display: block; font-size: 0.65rem; color: #00f0ff; letter-spacing: 2px; margin-bottom: 15px; opacity: 0.8;
+      display: block; font-size: 0.65rem; color: #00f0ff; letter-spacing: 2px; margin-bottom: 12px; opacity: 0.8;
       border-bottom: 1px solid rgba(0,240,255,0.2); padding-bottom: 5px;
     }
 
-    .field-group { margin-bottom: 12px; text-align: left; }
-    .field-label { font-size: 0.7rem; color: #888; margin-bottom: 4px; letter-spacing: 1px; font-weight: bold; }
+    .field-group { margin-bottom: 10px; text-align: left; }
+    .field-label { font-size: 0.68rem; color: #888; margin-bottom: 3px; letter-spacing: 1px; font-weight: bold; }
 
     .cyber-input {
-      width: 100%; padding: 12px 15px; font-size: 1rem; color: #fff;
+      width: 100%; padding: 10px 12px; font-size: 0.95rem; color: #fff;
       background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3);
       outline: none; transition: all 0.2s ease;
       clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
     }
     .cyber-input:focus { border-color: #00f0ff; background: rgba(0, 240, 255, 0.12); box-shadow: 0 0 15px rgba(0,240,255,0.4); }
 
-    /* ボタンデザイン */
-    .btn-container { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    .btn-container { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
     .cyber-btn {
-      position: relative; padding: 14px; font-size: 1rem; font-weight: 900; color: #fff;
+      position: relative; padding: 12px; font-size: 0.95rem; font-weight: 900; color: #fff;
       background: rgba(0, 240, 255, 0.15); border: none; cursor: pointer;
       clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
       transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 1px;
@@ -93,11 +88,10 @@
     .cyber-btn.btn-solo::before { background: #ffe600; }
     .cyber-btn.btn-solo:hover { background: #ffe600; color: #000; box-shadow: 0 0 25px #ffe600; }
 
-    .cyber-btn.btn-sub { background: rgba(255, 0, 85, 0.15); color: #ff0055; font-size: 0.9rem; padding: 10px; }
+    .cyber-btn.btn-sub { background: rgba(255, 0, 85, 0.15); color: #ff0055; font-size: 0.85rem; padding: 8px; }
     .cyber-btn.btn-sub::before { background: #ff0055; }
     .cyber-btn.btn-sub:hover { background: #ff0055; color: #fff; box-shadow: 0 0 25px #ff0055; }
 
-    /* モーダル & タブ切替 */
     .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 20; backdrop-filter: blur(8px); }
     .modal-content {
       background: #090c18; border: 1px solid #00f0ff; padding: 25px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;
@@ -116,7 +110,6 @@
 
     .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.95rem; }
 
-    /* アーケード HUD */
     #header-ui {
       position: absolute; top: 0; left: 0; width: 100%; height: 80px;
       background: linear-gradient(to bottom, rgba(5,10,25,0.95), rgba(5,10,25,0.6));
@@ -132,7 +125,6 @@
     #field-container { position: absolute; top:0; left:0; width:100vw; height:100vh; transition: transform 0.3s ease; cursor: crosshair; }
     #field-container.reversed { transform: scaleX(-1); }
 
-    /* マップ特殊ギミック */
     #field-container.stage-diner { animation: shakeStage 3s ease-in-out infinite; }
     @keyframes shakeStage {
       0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -149,7 +141,6 @@
       100% { transform: translate(-50%, -50%) translateX(-30px); }
     }
 
-    /* 🪩 ネオンディスコ演出 */
     body.stage-disco .bg-grid {
       animation: discoGrid 1.2s infinite linear, gridMove 8s linear infinite !important;
     }
@@ -180,7 +171,6 @@
       50% { transform: translate(-50%, -50%) scale(1.3); }
     }
 
-    /* 🎨 カラフルインクスプラッシュ */
     #ink-container { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; }
     .ink-spot {
       position: absolute; border-radius: 50%; pointer-events: none;
@@ -188,29 +178,18 @@
       animation: inkSplatter 0.25s ease-out forwards, inkFade 3.5s ease-in forwards;
       filter: blur(1px); opacity: 0.9;
     }
-    @keyframes inkSplatter {
-      to { transform: translate(-50%, -50%) scale(1); }
-    }
-    @keyframes inkFade {
-      0%, 75% { opacity: 0.9; }
-      100% { opacity: 0; }
-    }
+    @keyframes inkSplatter { to { transform: translate(-50%, -50%) scale(1); } }
+    @keyframes inkFade { 0%, 75% { opacity: 0.9; } 100% { opacity: 0; } }
 
-    /* ターゲット表示 */
     .target { position: absolute; width: 85px; height: 85px; transform: translate(-50%, -50%); cursor: pointer; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 4.2rem; filter: drop-shadow(0 0 15px rgba(255,255,255,0.7)); transition: transform 0.08s ease; animation: popIn 0.2s ease-out; }
     .target:active { transform: translate(-50%, -50%) scale(0.8); }
     @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
 
-    /* 👻 お化けターゲット */
     .target.t-ghost {
-      opacity: 0.45;
-      filter: drop-shadow(0 0 18px #00f0ff);
+      opacity: 0.45; filter: drop-shadow(0 0 18px #00f0ff);
       animation: ghostFade 0.6s ease-in-out infinite alternate, popIn 0.2s ease-out !important;
     }
-    @keyframes ghostFade {
-      0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.85); }
-      100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1.1); }
-    }
+    @keyframes ghostFade { 0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.85); } 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1.1); } }
 
     .target.t-barrel { font-size: 3.8rem; filter: drop-shadow(0 0 15px #ffa726); }
     .target.t-barrel.damaged { animation: barrelHit 0.15s ease-in-out; filter: drop-shadow(0 0 20px #ff0055) brightness(1.3); }
@@ -219,17 +198,12 @@
     .barrel-hp-bar { position: absolute; bottom: -8px; width: 65px; height: 8px; background: rgba(0,0,0,0.8); border: 1px solid #ffa726; border-radius: 4px; overflow: hidden; }
     .barrel-hp-fill { height: 100%; background: #ffa726; width: 100%; transition: width 0.1s linear; }
 
-    /* 💥 命中スコアポップアップ演出 */
     .score-popup {
       position: absolute; font-weight: 900; font-size: 1.8rem; pointer-events: none; z-index: 10;
       animation: scoreFloat 0.7s ease-out forwards;
       text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
     }
-    @keyframes scoreFloat {
-      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.6); }
-      50% { opacity: 1; transform: translate(-50%, -100%) scale(1.3); }
-      100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
-    }
+    @keyframes scoreFloat { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.6); } 50% { opacity: 1; transform: translate(-50%, -100%) scale(1.3); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1); } }
 
     #miss-overlay { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 9; background: rgba(255,0,85,0.25); display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 900; color: #ff0055; text-shadow: 0 0 20px #ff0055; opacity: 0; transition: opacity 0.1s ease; }
     #miss-overlay.show { opacity: 1; }
@@ -247,7 +221,6 @@
 </head>
 <body>
 
-  <!-- 背景演出 -->
   <div class="bg-grid"></div>
   <div class="scanline"></div>
 
@@ -267,9 +240,14 @@
         <div class="field-label">SECURITY PASSCODE</div>
         <input type="password" id="pass-input" class="cyber-input" placeholder="暗証番号" maxlength="12">
       </div>
+      <!-- 🔑 部屋コード（プライベート対戦用） -->
+      <div class="field-group">
+        <div class="field-label">ROOM CODE // 合言葉 (任意)</div>
+        <input type="text" id="room-input" class="cyber-input" placeholder="空欄=ランダム対戦 / 入力=部屋対戦" maxlength="10">
+      </div>
 
       <div class="btn-container">
-        <button class="cyber-btn" onclick="handleAuthAndAction('rank')">⚔️ ランク対戦マッチ</button>
+        <button class="cyber-btn" onclick="handleAuthAndAction('rank')">⚔️ 対戦マッチ開始</button>
         <button class="cyber-btn btn-solo" onclick="handleAuthAndAction('solo')">🎯 ソロトレーニング</button>
         <div style="display: flex; gap: 10px; margin-top: 5px;">
           <button class="cyber-btn btn-sub" style="flex:1;" onclick="openRankings()">🏆 ランキング</button>
@@ -282,12 +260,12 @@
   <div id="waiting-modal" class="hidden">
     <div class="spinner"></div>
     <h2 style="color:#00f0ff; font-size:1.6rem; letter-spacing:2px;">SEARCHING OPPONENT...</h2>
-    <p style="color:#aaa; margin-top:12px; font-size:0.85rem;">別タブまたはスマホでアクセスすると対戦テスト可能</p>
+    <p style="color:#aaa; margin-top:12px; font-size:0.85rem;">部屋コードを入力した場合は同じ合言葉の相手を待機中</p>
   </div>
 
   <div id="countdown-overlay" class="hidden">3</div>
 
-  <!-- 🏆 ランキングモーダル（タブ切り替え対応） -->
+  <!-- ランキングモーダル -->
   <div id="rank-modal" class="modal hidden">
     <div class="modal-content">
       <h3>🏆 TOP RATINGS</h3>
@@ -360,7 +338,6 @@
   </div>
 
   <script>
-    // 🔊 Web Audio API サウンド合成
     let audioCtx = null;
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -500,7 +477,8 @@
       if (pendingMode === 'solo') {
         socket.emit('start_solo');
       } else if (pendingMode === 'rank') {
-        socket.emit('join_queue');
+        const roomCode = document.getElementById('room-input').value.trim();
+        socket.emit('join_queue', { roomCode });
         document.getElementById('waiting-modal').classList.remove('hidden');
       }
       pendingMode = null;
@@ -585,15 +563,9 @@
 
     function convertToCushion(el, duration = 400) {
       if (!el) return;
-      el.innerText = '';
-      el.style.background = 'transparent';
-      el.style.border = 'none';
-      el.style.boxShadow = 'none';
-      el.style.filter = 'none';
-      el.style.animation = 'none';
-      el.style.width = '110px';
-      el.style.height = '110px';
-      el.style.zIndex = '3';
+      el.innerText = ''; el.style.background = 'transparent'; el.style.border = 'none';
+      el.style.boxShadow = 'none'; el.style.filter = 'none'; el.style.animation = 'none';
+      el.style.width = '110px'; el.style.height = '110px'; el.style.zIndex = '3';
 
       const clone = el.cloneNode(true);
       clone.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
@@ -612,9 +584,7 @@
       const container = document.getElementById('field-container');
       const inkContainer = document.getElementById('ink-container');
       
-      container.className = '';
-      document.body.className = '';
-      inkContainer.innerHTML = '';
+      container.className = ''; document.body.className = ''; inkContainer.innerHTML = '';
 
       if (stage.id === 'diner') container.classList.add('stage-diner');
       if (stage.id === 'wind') container.classList.add('stage-wind');
@@ -629,12 +599,9 @@
       spots.forEach(s => {
         const el = document.createElement('div');
         el.className = 'ink-spot';
-        el.style.left = s.x + 'vw';
-        el.style.top = s.y + 'vh';
-        el.style.width = s.size + 'px';
-        el.style.height = s.size + 'px';
-        el.style.background = s.color;
-        el.style.boxShadow = `0 0 30px ${s.color}`;
+        el.style.left = s.x + 'vw'; el.style.top = s.y + 'vh';
+        el.style.width = s.size + 'px'; el.style.height = s.size + 'px';
+        el.style.background = s.color; el.style.boxShadow = `0 0 30px ${s.color}`;
         container.appendChild(el);
 
         setTimeout(() => el.remove(), 3500);
@@ -688,10 +655,7 @@
     socket.on('barrel_damaged', ({ targetId, hp, maxHp }) => {
       const el = document.getElementById(targetId);
       if (el) {
-        el.classList.remove('damaged');
-        void el.offsetWidth;
-        el.classList.add('damaged');
-
+        el.classList.remove('damaged'); void el.offsetWidth; el.classList.add('damaged');
         const hpFill = document.getElementById(`hp-${targetId}`);
         if (hpFill) hpFill.style.width = `${(hp / maxHp) * 100}%`;
       }

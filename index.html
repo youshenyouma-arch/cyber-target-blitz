@@ -97,14 +97,22 @@
     .cyber-btn.btn-sub::before { background: #ff0055; }
     .cyber-btn.btn-sub:hover { background: #ff0055; color: #fff; box-shadow: 0 0 25px #ff0055; }
 
-    /* モーダル */
+    /* モーダル & タブ切替 */
     .modal { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 20; backdrop-filter: blur(8px); }
     .modal-content {
-      background: #090c18; border: 1px solid #00f0ff; padding: 30px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;
+      background: #090c18; border: 1px solid #00f0ff; padding: 25px; width: 90%; max-width: 500px; max-height: 85vh; overflow-y: auto;
       clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
       box-shadow: 0 0 40px rgba(0,240,255,0.3); text-align: left;
     }
-    .modal-content h3 { color: #00f0ff; margin-bottom: 20px; font-size: 1.5rem; text-align: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 10px; letter-spacing: 2px; }
+    .modal-content h3 { color: #00f0ff; margin-bottom: 15px; font-size: 1.5rem; text-align: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 10px; letter-spacing: 2px; }
+
+    .rank-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+    .rank-tab-btn {
+      flex: 1; padding: 10px; font-size: 0.85rem; font-weight: bold; color: #aaa; background: rgba(255,255,255,0.05); border: 1px solid rgba(0,240,255,0.2); cursor: pointer; text-align: center; transition: all 0.2s ease;
+    }
+    .rank-tab-btn.active {
+      color: #00f0ff; background: rgba(0,240,255,0.2); border-color: #00f0ff; box-shadow: 0 0 12px rgba(0,240,255,0.3);
+    }
 
     .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.95rem; }
 
@@ -141,7 +149,7 @@
       100% { transform: translate(-50%, -50%) translateX(-30px); }
     }
 
-    /* 🪩 ネオンディスコ演出：背景七色高速スキャン ＆ ストロボ点滅 */
+    /* 🪩 ネオンディスコ演出 */
     body.stage-disco .bg-grid {
       animation: discoGrid 1.2s infinite linear, gridMove 8s linear infinite !important;
     }
@@ -172,7 +180,7 @@
       50% { transform: translate(-50%, -50%) scale(1.3); }
     }
 
-    /* 🎨 カラフルインクスプラッシュ（同期レイヤー） */
+    /* 🎨 カラフルインクスプラッシュ */
     #ink-container { position: absolute; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index: 7; }
     .ink-spot {
       position: absolute; border-radius: 50%; pointer-events: none;
@@ -193,7 +201,7 @@
     .target:active { transform: translate(-50%, -50%) scale(0.8); }
     @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
 
-    /* 👻 お化けターゲット：ふんわり半透明＋点滅 */
+    /* 👻 お化けターゲット */
     .target.t-ghost {
       opacity: 0.45;
       filter: drop-shadow(0 0 18px #00f0ff);
@@ -279,10 +287,14 @@
 
   <div id="countdown-overlay" class="hidden">3</div>
 
-  <!-- ランキングモーダル -->
+  <!-- 🏆 ランキングモーダル（タブ切り替え対応） -->
   <div id="rank-modal" class="modal hidden">
     <div class="modal-content">
       <h3>🏆 TOP RATINGS</h3>
+      <div class="rank-tabs">
+        <button id="tab-rate" class="rank-tab-btn active" onclick="switchRankTab('rate')">⚔️ 対戦レート</button>
+        <button id="tab-solo" class="rank-tab-btn" onclick="switchRankTab('solo')">🎯 ソロハイスコア</button>
+      </div>
       <div id="rank-list" class="rank-list">読み込み中...</div>
       <button class="cyber-btn" style="width:100%; margin-top:15px;" onclick="closeModal('rank-modal')">CLOSE</button>
     </div>
@@ -348,8 +360,107 @@
   </div>
 
   <script>
+    // 🔊 Web Audio API サウンド合成
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playHitSE() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function playGoldSE() {
+      if (!audioCtx) return;
+      [1000, 1500, 2000].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.05);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.05 + 0.12);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + idx * 0.05);
+        osc.stop(audioCtx.currentTime + idx * 0.05 + 0.12);
+      });
+    }
+
+    function playBombSE() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    function playBarrelSE() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.06);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+    }
+
+    function playMissSE() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playCountSE(isStart = false) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(isStart ? 880 : 440, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (isStart ? 0.3 : 0.12));
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + (isStart ? 0.3 : 0.12));
+    }
+
+    function playDebuffSE() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+    }
+
     const socket = io();
     let currentRoomId = null, isPlaying = false, pendingMode = null;
+    let cachedRatings = [], cachedSoloScores = [], currentTab = 'rate';
 
     const EMOJIS = {
       normal: '🎯', gold: '👑', bomb: '💣', ghost: '👻', barrel: '🛢️', timestop: '❄️', mirror: '🪞'
@@ -363,6 +474,7 @@
     };
 
     function handleAuthAndAction(mode) {
+      initAudio();
       const name = document.getElementById('name-input').value.trim();
       const pass = document.getElementById('pass-input').value.trim();
 
@@ -395,11 +507,53 @@
     });
 
     function openRankings() {
+      initAudio();
       document.getElementById('rank-modal').classList.remove('hidden');
       socket.emit('get_rankings');
     }
 
+    function switchRankTab(tab) {
+      currentTab = tab;
+      document.getElementById('tab-rate').classList.toggle('active', tab === 'rate');
+      document.getElementById('tab-solo').classList.toggle('active', tab === 'solo');
+      renderRankList();
+    }
+
+    function renderRankList() {
+      const container = document.getElementById('rank-list');
+      if (currentTab === 'rate') {
+        if (!cachedRatings || cachedRatings.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:#888;">対戦データがありません</p>';
+          return;
+        }
+        container.innerHTML = cachedRatings.map((r, i) => `
+          <div class="rank-item">
+            <span>${i + 1}. ${r.name}</span>
+            <span style="color:#00f0ff; font-weight:bold;">${r.rate} R</span>
+          </div>
+        `).join('');
+      } else {
+        if (!cachedSoloScores || cachedSoloScores.length === 0) {
+          container.innerHTML = '<p style="text-align:center; color:#888;">ソロデータがありません</p>';
+          return;
+        }
+        container.innerHTML = cachedSoloScores.map((r, i) => `
+          <div class="rank-item">
+            <span>${i + 1}. ${r.name}</span>
+            <span style="color:#ffe600; font-weight:bold;">${r.score.toLocaleString()} pt</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    socket.on('rankings_data', ({ ratings, soloScores }) => {
+      cachedRatings = ratings || [];
+      cachedSoloScores = soloScores || [];
+      renderRankList();
+    });
+
     function openRules() {
+      initAudio();
       document.getElementById('rules-modal').classList.remove('hidden');
     }
 
@@ -407,7 +561,6 @@
       document.getElementById(id).classList.add('hidden');
     }
 
-    // 💥 スコアポップアップ生成関数
     function showScorePopup(x, y, text, color = '#00f0ff') {
       const container = document.getElementById('field-container');
       const popup = document.createElement('div');
@@ -421,16 +574,15 @@
       setTimeout(() => popup.remove(), 700);
     }
 
-    // お手付き判定
     document.getElementById('field-container').addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
       if (e.target.id === 'field-container') {
+        playMissSE();
         showScorePopup(e.clientX, e.clientY, '-100', '#ff0055');
         socket.emit('miss_click', { roomId: currentRoomId });
       }
     });
 
-    // 🛡️ 透明クッション
     function convertToCushion(el, duration = 400) {
       if (!el) return;
       el.innerText = '';
@@ -439,35 +591,15 @@
       el.style.boxShadow = 'none';
       el.style.filter = 'none';
       el.style.animation = 'none';
-      
       el.style.width = '110px';
       el.style.height = '110px';
       el.style.zIndex = '3';
 
       const clone = el.cloneNode(true);
-      clone.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
-      });
-
-      if (el.parentNode) {
-        el.parentNode.replaceChild(clone, el);
-      }
+      clone.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+      if (el.parentNode) el.parentNode.replaceChild(clone, el);
       setTimeout(() => clone.remove(), duration);
     }
-
-    socket.on('rankings_data', ({ ratings }) => {
-      const container = document.getElementById('rank-list');
-      if (!ratings || ratings.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#888;">データがありません</p>';
-        return;
-      }
-      container.innerHTML = ratings.map((r, i) => `
-        <div class="rank-item">
-          <span>${i + 1}. ${r.name}</span>
-          <span style="color:#00f0ff; font-weight:bold;">${r.rate} R</span>
-        </div>
-      `).join('');
-    });
 
     socket.on('match_found', ({ roomId, stage }) => {
       currentRoomId = roomId;
@@ -491,7 +623,6 @@
       if (stage.id === 'warp') container.classList.add('stage-warp');
     });
 
-    // 🎨 サーバー同期カラフルインクスプラッシュ描画
     socket.on('ink_splash', (spots) => {
       const container = document.getElementById('ink-container');
       if (!container) return;
@@ -511,6 +642,7 @@
     });
 
     socket.on('countdown', (val) => {
+      playCountSE(val === 0);
       const el = document.getElementById('countdown-overlay');
       el.classList.remove('hidden');
       el.innerText = val > 0 ? val : 'START!';
@@ -538,11 +670,12 @@
         e.stopPropagation();
 
         let text = '+100', color = '#00f0ff';
-        if (t.type === 'gold') { text = '+1000'; color = '#ffe600'; }
-        else if (t.type === 'ghost') { text = '+1500'; color = '#00f0ff'; }
-        else if (t.type === 'bomb') { text = '-400'; color = '#ff0055'; }
-        else if (t.type === 'timestop' || t.type === 'mirror') { text = '+200'; color = '#00bcd4'; }
-        else if (t.type === 'barrel') { text = 'HIT!'; color = '#ffa726'; }
+        if (t.type === 'gold') { text = '+1000'; color = '#ffe600'; playGoldSE(); }
+        else if (t.type === 'ghost') { text = '+1500'; color = '#00f0ff'; playGoldSE(); }
+        else if (t.type === 'bomb') { text = '-400'; color = '#ff0055'; playBombSE(); }
+        else if (t.type === 'timestop' || t.type === 'mirror') { text = '+200'; color = '#00bcd4'; playHitSE(); }
+        else if (t.type === 'barrel') { text = 'HIT!'; color = '#ffa726'; playBarrelSE(); }
+        else { playHitSE(); }
 
         showScorePopup(e.clientX, e.clientY, text, color);
 
@@ -560,9 +693,7 @@
         el.classList.add('damaged');
 
         const hpFill = document.getElementById(`hp-${targetId}`);
-        if (hpFill) {
-          hpFill.style.width = `${(hp / maxHp) * 100}%`;
-        }
+        if (hpFill) hpFill.style.width = `${(hp / maxHp) * 100}%`;
       }
     });
 
@@ -594,6 +725,7 @@
     });
 
     socket.on('apply_debuff', ({ type, duration }) => {
+      playDebuffSE();
       if (type === 'FREEZE') {
         const el = document.getElementById('freeze-overlay');
         el.classList.remove('hidden');
@@ -611,19 +743,20 @@
       }
     });
 
-    socket.on('game_over', ({ winner, p1, p2, isSolo }) => {
+    socket.on('game_over', ({ winner, p1, p2, isSolo, isNewRecord }) => {
       isPlaying = false;
       document.getElementById('game-screen').classList.add('hidden');
       document.getElementById('result-screen').classList.remove('hidden');
-      document.getElementById('res-winner').innerText = isSolo ? 'ソロ練習完了' : winner;
       
       const meName = localStorage.getItem('cyber_name');
       const me = (p1.name === meName) ? p1 : p2;
       document.getElementById('res-score').innerText = me.score;
 
       if (isSolo) {
+        document.getElementById('res-winner').innerText = isNewRecord ? '🎉 自己ベスト更新！' : 'ソロ練習完了';
         document.getElementById('res-rate-box').style.display = 'none';
       } else {
+        document.getElementById('res-winner').innerText = winner;
         document.getElementById('res-rate-box').style.display = 'block';
         document.getElementById('res-rate').innerText = `${me.oldRate} R ➔ ${me.newRate} R`;
       }

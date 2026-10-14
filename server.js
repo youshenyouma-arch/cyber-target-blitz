@@ -33,18 +33,31 @@ function calcElo(ratingA, ratingB, actualScoreA) {
 }
 
 const STAGES = [
-  { id: 'city', name: 'サイバーシティ 🏙️', desc: '標準的なハイスピードステージ' },
-  { id: 'diner', name: 'カオスダイナー 🍔', desc: '画面全体が激しく揺れ動く！' },
-  { id: 'wind', name: 'ウィンドバレー 🌪️', desc: '強風で的が左右に大きく流される！' },
-  { id: 'disco', name: 'ネオンディスコ 🪩', desc: '背景が七色に点滅・チカチカ変化！' },
-  { id: 'gravity', name: 'グラビティゾーン 🚀', desc: '無重力！的が上へ向かって浮き上がる' },
-  { id: 'warp', name: 'クロノスワープ ⏳', desc: '時空が歪み的のスピードが伸縮！' },
-  { id: 'ink', name: 'インクファクトリー 🦑', desc: '定期的にカラフルインクが飛び散り視界遮断！' }
+  { id: 'city', name: 'サイバーシティ 🏙️' },
+  { id: 'diner', name: 'カオスダイナー 🍔' },
+  { id: 'wind', name: 'ウィンドバレー 🌪️' },
+  { id: 'disco', name: 'ネオンディスコ 🪩' },
+  { id: 'gravity', name: 'グラビティゾーン 🚀' },
+  { id: 'warp', name: 'クロノスワープ ⏳' },
+  { id: 'ink', name: 'インクファクトリー 🦑' }
 ];
 
 let waitingPlayer = null;
-let privateWaiting = {}; // 🔑 部屋コード待機バッファ
+let privateWaiting = {};
 let rooms = {};
+
+// 🧹 待機キューから特定ソケット/ユーザーをクリーンアップする関数
+function removeFromQueue(socket) {
+  if (!socket) return;
+  if (waitingPlayer && (waitingPlayer.id === socket.id || (socket.pName && waitingPlayer.pName === socket.pName))) {
+    waitingPlayer = null;
+  }
+  for (const code in privateWaiting) {
+    if (privateWaiting[code] && (privateWaiting[code].id === socket.id || (socket.pName && privateWaiting[code].pName === socket.pName))) {
+      delete privateWaiting[code];
+    }
+  }
+}
 
 io.on('connection', (socket) => {
   socket.pName = null;
@@ -97,21 +110,20 @@ io.on('connection', (socket) => {
     } catch (err) { console.error("get_rankings error:", err); }
   });
 
-  socket.on('disconnect', () => {
-    if (waitingPlayer && waitingPlayer.id === socket.id) {
-      waitingPlayer = null;
-    }
-    for (const code in privateWaiting) {
-      if (privateWaiting[code] && privateWaiting[code].id === socket.id) {
-        delete privateWaiting[code];
-      }
-    }
+  socket.on('leave_queue', () => {
+    removeFromQueue(socket);
   });
 
-  // 🎯 ソロモード
+  socket.on('disconnect', () => {
+    removeFromQueue(socket);
+  });
+
+  // 🎯 ソロモード開始
   socket.on('start_solo', () => {
     try {
       if (!socket.pName) return;
+      removeFromQueue(socket); // 対戦キューから離脱
+
       const roomId = 'solo_' + socket.id;
       const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
       
@@ -129,80 +141,48 @@ io.on('connection', (socket) => {
 
       socket.join(roomId);
       socket.emit('match_found', { roomId, stage, isSolo: true });
-      
-      let count = 3;
-      const countTimer = setInterval(() => {
-        try {
-          if (!rooms[roomId]) { clearInterval(countTimer); return; }
-          io.to(roomId).emit('countdown', count);
-          count--;
-          if (count < 0) {
-            clearInterval(countTimer);
-            if (rooms[roomId]) {
-              rooms[roomId].isStarted = true;
-              io.to(roomId).emit('start_game');
-              startRoomGame(roomId);
-            }
-          }
-        } catch (e) { console.error(e); }
-      }, 1000);
+      runCountdown(roomId);
     } catch (err) { console.error(err); }
   });
 
-  // ⚔️ 対戦キュー（ランダム & 部屋コード両対応）
+  // ⚔️ 対戦キュー（厳格なマッチング判定）
   socket.on('join_queue', ({ roomCode }) => {
     try {
       if (!socket.pName) return;
       const cleanCode = roomCode ? roomCode.trim() : "";
 
+      // 既存の古い待機情報を削除
+      removeFromQueue(socket);
+
       if (cleanCode) {
-        // 🔑 部屋コードあり（プライベート対戦）
-        if (privateWaiting[cleanCode] && privateWaiting[cleanCode].id !== socket.id && privateWaiting[cleanCode].connected) {
-          const p1 = privateWaiting[cleanCode];
-          const p2 = socket;
+        // 🔑 部屋コード対戦
+        let opponent = privateWaiting[cleanCode];
+
+        // 相手が無効・切断済み・自分自身（同名/同ID）の場合は除外
+        if (opponent && (!opponent.connected || opponent.id === socket.id || opponent.pName === socket.pName)) {
           delete privateWaiting[cleanCode];
+          opponent = null;
+        }
 
-          const roomId = 'private_' + cleanCode + '_' + Date.now();
-          p1.join(roomId); p2.join(roomId);
-          const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
-
-          rooms[roomId] = {
-            id: roomId, isSolo: false,
-            p1: { id: p1.id, name: p1.pName, rate: p1.pRate, score: 0, combo: 1.0, comboCount: 0 },
-            p2: { id: p2.id, name: p2.pName, rate: p2.pRate, score: 0, combo: 1.0, comboCount: 0 },
-            stage, timeLeft: 60, targets: {}, targetSeq: 0, isStarted: false
-          };
-
-          io.to(roomId).emit('match_found', { roomId, stage, isSolo: false });
-          runCountdown(roomId);
+        if (opponent) {
+          delete privateWaiting[cleanCode];
+          createMatch(opponent, socket, 'private_' + cleanCode + '_' + Date.now());
         } else {
           privateWaiting[cleanCode] = socket;
           socket.emit('waiting_for_opponent');
         }
       } else {
-        // 🌐 部屋コードなし（ランダム対戦）
-        if (waitingPlayer && (!waitingPlayer.connected || waitingPlayer.id === socket.id)) {
+        // 🌐 ランダム対戦
+        let opponent = waitingPlayer;
+
+        if (opponent && (!opponent.connected || opponent.id === socket.id || opponent.pName === socket.pName)) {
           waitingPlayer = null;
+          opponent = null;
         }
 
-        if (waitingPlayer) {
-          const p1 = waitingPlayer;
-          const p2 = socket;
+        if (opponent) {
           waitingPlayer = null;
-
-          const roomId = 'room_' + Date.now();
-          p1.join(roomId); p2.join(roomId);
-          const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
-
-          rooms[roomId] = {
-            id: roomId, isSolo: false,
-            p1: { id: p1.id, name: p1.pName, rate: p1.pRate, score: 0, combo: 1.0, comboCount: 0 },
-            p2: { id: p2.id, name: p2.pName, rate: p2.pRate, score: 0, combo: 1.0, comboCount: 0 },
-            stage, timeLeft: 60, targets: {}, targetSeq: 0, isStarted: false
-          };
-
-          io.to(roomId).emit('match_found', { roomId, stage, isSolo: false });
-          runCountdown(roomId);
+          createMatch(opponent, socket, 'room_' + Date.now());
         } else {
           waitingPlayer = socket;
           socket.emit('waiting_for_opponent');
@@ -210,6 +190,27 @@ io.on('connection', (socket) => {
       }
     } catch (err) { console.error(err); }
   });
+
+  function createMatch(p1, p2, roomId) {
+    p1.join(roomId);
+    p2.join(roomId);
+    const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
+
+    rooms[roomId] = {
+      id: roomId,
+      isSolo: false,
+      p1: { id: p1.id, name: p1.pName, rate: p1.pRate, score: 0, combo: 1.0, comboCount: 0 },
+      p2: { id: p2.id, name: p2.pName, rate: p2.pRate, score: 0, combo: 1.0, comboCount: 0 },
+      stage: stage,
+      timeLeft: 60,
+      targets: {},
+      targetSeq: 0,
+      isStarted: false
+    };
+
+    io.to(roomId).emit('match_found', { roomId, stage, isSolo: false });
+    runCountdown(roomId);
+  }
 
   function runCountdown(roomId) {
     let count = 3;
@@ -281,7 +282,6 @@ io.on('connection', (socket) => {
     } catch (err) { console.error(err); }
   });
 
-  // ⚠️ お手付き
   socket.on('miss_click', ({ roomId }) => {
     try {
       const room = rooms[roomId];
@@ -426,14 +426,4 @@ function finishRoomGame(roomId) {
       io.to(roomId).emit('game_over', { 
         winner: winnerName, 
         p1: { name: room.p1.name, score: room.p1.score, oldRate: room.p1.rate, newRate: nR1 }, 
-        p2: { name: room.p2.name, score: room.p2.score, oldRate: room.p2.rate, newRate: nR2 },
-        isSolo: false
-      });
-    }
-  } catch (err) { console.error(err); }
-
-  delete rooms[roomId];
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        p2: { name: room.p2.name, score

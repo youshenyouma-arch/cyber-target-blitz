@@ -70,24 +70,32 @@ io.on('connection', (socket) => {
           return;
         }
       } else {
-        data.players[cleanName] = { pass: cleanPass, rate: 1500, games: 0 };
+        data.players[cleanName] = { pass: cleanPass, rate: 1500, soloScore: 0, games: 0 };
         saveData(data);
       }
 
       socket.pName = cleanName;
-      socket.pRate = data.players[cleanName].rate;
+      socket.pRate = data.players[cleanName].rate || 1500;
       socket.emit('auth_success', { name: cleanName, rate: socket.pRate });
     } catch (err) { console.error("init_player error:", err); }
   });
 
+  // 🏆 2種類のランキングデータ取得
   socket.on('get_rankings', () => {
     try {
       const data = loadData();
       const ratings = Object.entries(data.players)
-        .map(([name, val]) => ({ name, rate: val.rate }))
+        .map(([name, val]) => ({ name, rate: val.rate || 1500 }))
         .sort((a, b) => b.rate - a.rate)
         .slice(0, 50);
-      socket.emit('rankings_data', { ratings });
+
+      const soloScores = Object.entries(data.players)
+        .map(([name, val]) => ({ name, score: val.soloScore || 0 }))
+        .filter(p => p.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 50);
+
+      socket.emit('rankings_data', { ratings, soloScores });
     } catch (err) { console.error("get_rankings error:", err); }
   });
 
@@ -326,20 +334,13 @@ function startRoomGame(roomId) {
     } catch (e) { console.error(e); }
   }, 550);
 
-  // 🦑 インクステージ：サーバーで生成した同じカラフルインク位置を全員へ同時配信
   if (room.stage.id === 'ink') {
     const triggerInk = () => {
       try {
         if (!rooms[roomId]) return;
-        const colors = [
-          '#ff007f', // ネオンピンク
-          '#00f0ff', // サイバーブルー
-          '#ffe600', // ネオンイエロー
-          '#a000ff', // ネオンパープル
-          '#00ff66'  // 蛍光グリーン
-        ];
+        const colors = ['#ff007f', '#00f0ff', '#ffe600', '#a000ff', '#00ff66'];
         const spots = [];
-        const count = Math.floor(Math.random() * 3) + 3; // 3〜5個
+        const count = Math.floor(Math.random() * 3) + 3;
         for (let i = 0; i < count; i++) {
           spots.push({
             x: Math.floor(Math.random() * 70 + 15),
@@ -369,11 +370,27 @@ function finishRoomGame(roomId) {
   if (room.inkTimer) clearInterval(room.inkTimer);
 
   try {
+    const data = loadData();
+
     if (room.isSolo) {
+      // 🎯 ソロハイスコアの更新判定
+      const pName = room.p1.name;
+      let isNewRecord = false;
+
+      if (data.players[pName]) {
+        const oldScore = data.players[pName].soloScore || 0;
+        if (room.p1.score > oldScore) {
+          data.players[pName].soloScore = room.p1.score;
+          saveData(data);
+          isNewRecord = true;
+        }
+      }
+
       io.to(roomId).emit('game_over', { 
         winner: room.p1.name, 
         p1: { name: room.p1.name, score: room.p1.score, oldRate: room.p1.rate, newRate: room.p1.rate },
-        isSolo: true
+        isSolo: true,
+        isNewRecord: isNewRecord
       });
     } else {
       let winnerName = "引き分け";
@@ -388,7 +405,6 @@ function finishRoomGame(roomId) {
       const nR1 = calcElo(room.p1.rate, room.p2.rate, p1WinVal);
       const nR2 = calcElo(room.p2.rate, room.p1.rate, p2WinVal);
 
-      const data = loadData();
       if (data.players[room.p1.name]) data.players[room.p1.name].rate = nR1;
       if (data.players[room.p2.name]) data.players[room.p2.name].rate = nR2;
       saveData(data);

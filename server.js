@@ -46,7 +46,6 @@ let waitingPlayer = null;
 let privateWaiting = {};
 let rooms = {};
 
-// 🧹 待機キューから特定ソケット/ユーザーをクリーンアップする関数
 function removeFromQueue(socket) {
   if (!socket) return;
   if (waitingPlayer && (waitingPlayer.id === socket.id || (socket.pName && waitingPlayer.pName === socket.pName))) {
@@ -118,11 +117,10 @@ io.on('connection', (socket) => {
     removeFromQueue(socket);
   });
 
-  // 🎯 ソロモード開始
   socket.on('start_solo', () => {
     try {
       if (!socket.pName) return;
-      removeFromQueue(socket); // 対戦キューから離脱
+      removeFromQueue(socket);
 
       const roomId = 'solo_' + socket.id;
       const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
@@ -145,20 +143,16 @@ io.on('connection', (socket) => {
     } catch (err) { console.error(err); }
   });
 
-  // ⚔️ 対戦キュー（厳格なマッチング判定）
   socket.on('join_queue', ({ roomCode }) => {
     try {
       if (!socket.pName) return;
       const cleanCode = roomCode ? roomCode.trim() : "";
 
-      // 既存の古い待機情報を削除
       removeFromQueue(socket);
 
       if (cleanCode) {
-        // 🔑 部屋コード対戦
         let opponent = privateWaiting[cleanCode];
 
-        // 相手が無効・切断済み・自分自身（同名/同ID）の場合は除外
         if (opponent && (!opponent.connected || opponent.id === socket.id || opponent.pName === socket.pName)) {
           delete privateWaiting[cleanCode];
           opponent = null;
@@ -172,7 +166,6 @@ io.on('connection', (socket) => {
           socket.emit('waiting_for_opponent');
         }
       } else {
-        // 🌐 ランダム対戦
         let opponent = waitingPlayer;
 
         if (opponent && (!opponent.connected || opponent.id === socket.id || opponent.pName === socket.pName)) {
@@ -231,7 +224,6 @@ io.on('connection', (socket) => {
     }, 1000);
   }
 
-  // 🎯 ターゲット命中
   socket.on('hit_target', ({ roomId, targetId }) => {
     try {
       const room = rooms[roomId];
@@ -426,4 +418,14 @@ function finishRoomGame(roomId) {
       io.to(roomId).emit('game_over', { 
         winner: winnerName, 
         p1: { name: room.p1.name, score: room.p1.score, oldRate: room.p1.rate, newRate: nR1 }, 
-        p2: { name: room.p2.name, score
+        p2: { name: room.p2.name, score: room.p2.score, oldRate: room.p2.rate, newRate: nR2 },
+        isSolo: false
+      });
+    }
+  } catch (err) { console.error(err); }
+
+  delete rooms[roomId];
+}
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

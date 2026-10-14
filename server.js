@@ -46,13 +46,14 @@ let waitingPlayer = null;
 let privateWaiting = {};
 let rooms = {};
 
+// 🧹 待機キューのクリーンアップ（接続ソケットIDのみで判定）
 function removeFromQueue(socket) {
   if (!socket) return;
-  if (waitingPlayer && (waitingPlayer.id === socket.id || (socket.pName && waitingPlayer.pName === socket.pName))) {
+  if (waitingPlayer && waitingPlayer.id === socket.id) {
     waitingPlayer = null;
   }
   for (const code in privateWaiting) {
-    if (privateWaiting[code] && (privateWaiting[code].id === socket.id || (socket.pName && privateWaiting[code].pName === socket.pName))) {
+    if (privateWaiting[code] && privateWaiting[code].id === socket.id) {
       delete privateWaiting[code];
     }
   }
@@ -117,6 +118,7 @@ io.on('connection', (socket) => {
     removeFromQueue(socket);
   });
 
+  // 🎯 ソロモード開始
   socket.on('start_solo', () => {
     try {
       if (!socket.pName) return;
@@ -143,17 +145,21 @@ io.on('connection', (socket) => {
     } catch (err) { console.error(err); }
   });
 
+  // ⚔️ 対戦キュー（全角→半角自動正規化）
   socket.on('join_queue', ({ roomCode }) => {
     try {
       if (!socket.pName) return;
-      const cleanCode = roomCode ? roomCode.trim() : "";
+
+      // 全角英数字を自動的に半角小文字へ変換（全角「７」や「ｃａｔ」対策）
+      const cleanCode = roomCode ? roomCode.trim().normalize('NFKC').toLowerCase() : "";
 
       removeFromQueue(socket);
 
       if (cleanCode) {
+        // 🔑 部屋コード対戦
         let opponent = privateWaiting[cleanCode];
 
-        if (opponent && (!opponent.connected || opponent.id === socket.id || opponent.pName === socket.pName)) {
+        if (opponent && (!opponent.connected || opponent.id === socket.id)) {
           delete privateWaiting[cleanCode];
           opponent = null;
         }
@@ -166,9 +172,10 @@ io.on('connection', (socket) => {
           socket.emit('waiting_for_opponent');
         }
       } else {
+        // 🌐 ランダム対戦
         let opponent = waitingPlayer;
 
-        if (opponent && (!opponent.connected || opponent.id === socket.id || opponent.pName === socket.pName)) {
+        if (opponent && (!opponent.connected || opponent.id === socket.id)) {
           waitingPlayer = null;
           opponent = null;
         }
